@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { reactive, effect } from "./reactivity.js"
+        const obj = {
+            name: "jw",
+            age: 30,
+            flag: true
+        }
+        const state = reactive(obj)
+        effect(() => {
+            // 1- flag 和 name 会触发执行
+            // 正常的话：下一次应该清理掉flag和name属性。重新收集flag和age属性，2- flag 和 age 会触发执行
+            // 3-
+            console.log("runner")
+            app.innerHTML = state.flag ? state.name : state.age
+        })
+        setTimeout(() => {
+            state.flag = false
+            setTimeout(() => {
+                console.log("修改了name")
+                state.name = "xxx"
+                console.log("修改了name")
+            }, 1000)
+        }, 1000)
+    </script>
+</body>
+</html>

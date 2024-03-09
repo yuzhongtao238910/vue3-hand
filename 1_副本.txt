@@ -1,0 +1,8 @@
+1- golang的教程，还没有结束啊
+    https://www.bilibili.com/video/BV1bp4y1x7Th?p=8&vd_source=6ccda088f124d39971be265ef3ed268f
+2-
+    pnpm init
+    新 建 yaml 文件
+
+    // 这样才可以把包安装到根目录
+    pnpm install vue -w

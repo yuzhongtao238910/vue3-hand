@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        /*
+        关于ref的使用
+
+        如果在页面渲染的时候 vue之中的模版的ref的值会自动的脱ref .value
+
+        <template> {{ a }} </template>
+
+        const a = ref("123")
+         */
+        // import { toRefs, toRef, effect, reactive, watch, watchEffect, ref } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        import { toRefs, watchEffect, reactive, toRef} from "./reactivity.js";
+
+        const state = reactive({
+            name: "jw",
+            age: 30
+        })
+        // 将reactive的值转换为响应式
+        let name = toRef(state, "name") // 告诉将state之中的name属性转换为ref
+        let age = toRefs(state, "age") // 响应式数据的时候可以直接解构
+        const {name: name1, age: age1} = toRefs(state)
+        console.log(name, age)
+        console.log(name1, age1)
+        watchEffect(() => { // 代理模式 proxy
+            app.innerHTML = name.value // name.value => state.name
+        })
+        setTimeout(() => {
+            state.name = "xxx"
+        }, 1000)
+    </script>
+</body>
+</html>

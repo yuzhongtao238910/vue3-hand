@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { h, render } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        // render(h("h1", "hello"), app)
+        // console.log(h("h1", "hello"))
+        import { createRenderer, render } from "./runtime-dom.js"
+
+
+        // 方案1: 自己渲染的逻辑，一般是自己想写一套针对某个平台渲染的逻辑，一些跨平台的方案
+        // const renderer = createRenderer({})
+        // renderer.render({type: "h1"}, app)
+
+
+        // 方案2: 直接使用vue的渲染器，专门用于浏览器的
+        // 除了常规渲染之外，一些弹窗希望放到全局的可以使用render函数 指定元素挂载到哪里
+        render({type: "h1"}, app)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+

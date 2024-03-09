@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { h, render } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        import { createVNode } from "./runtime-dom.js"
+
+        // createVNode的第3个参数只能够传递3种类型 数组 文本 null
+        console.log(createVNode('div', null, 'hello'))
+
+        // render(createVNode('div', null, ['hello', 'as']), app)
+
+        // 什么情况下会使用h方法，h方法用起来很麻烦
+        /*
+        1）模版搞不定
+        2）不想引入jsx写法
+
+        h函数有特别多的写法
+         */
+        render(h('div'), app) // 一个参数就是标签
+        render(h('div', { style: {color: 'red'}}), app) // 可以给属性
+        render(h('div', { style: {color: 'red'}}, 'hello'), app) // 可以给属性
+        render(h('div', 'hello'), app) // 可以给属性
+        render(h('div', ['hello', 'ppp']), app) // 可以给属性
+        render(h('div', [h('div', '222'), 'ppp']), app) // 可以给属性
+        render(h('div', h('div', null, '8888')), app) // 可以给属性
+        // vue2之中的所有的属性需要区分attrs domAttrs props
+        // vue3之中直接丢进来就可以
+
+
+        // h里面3个以上的参数 3个以上的参数，第二个必须是属性，可以是null
+        // render(h('div', null, '1', '3', '7'), app)
+
+
+        render(h('div', [h('div', null, '8888'), "238910"]), app) // 可以给属性
+
+
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

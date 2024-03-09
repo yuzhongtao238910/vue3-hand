@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        //vue -> runtime-dom -> runtime-core -> reactivity
+        // import { effect, reactive, watch, watchEffect } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        import { reactive, effect, watch, watchEffect } from "./reactivity.js"
+        const state = reactive({
+            name: "jw",
+            address: {
+                n: '316'
+            }
+        })
+        // watch 主要有几种写法，一种是监控对象 state，一种是监控函数 () => state.name 还有一种是 写成为一个数组[() => state.name, () => state.age]
+        // 对象是无法监控到前后值的更改，因为是同一个对象的引用，而且是异步更新
+        // watch(state, (newVal, oldVal) => {
+        //     console.log("变化了。。。", newVal, oldVal)
+        // }, {
+        //     flush: 'sync' // 表示此时watch更新是同步的 默认先标记为同步的方法，后面再解决异步更新的问题
+        // })
+        // watch(() => state.name, (newVal, oldVal) => {
+        //     console.log("变化了。。。", newVal, oldVal)
+        // }, {
+        //     flush: 'sync' // 表示此时watch更新是同步的 默认先标记为同步的方法，后面再解决异步更新的问题
+        // })
+        // effect(() => {
+        //     app.innerHTML = state.name
+        // })
+
+        // 默认是异步的
+        watchEffect(() => {
+            // 自动的收集依赖
+            app.innerHTML = state.name
+            console.log("11111")
+        }, {
+            flush: 'sync'
+        })
+
+
+        setTimeout(() => {
+            state.name = "apple"
+            console.log("123")
+        }, 1000)
+    </script>
+</body>
+</html>

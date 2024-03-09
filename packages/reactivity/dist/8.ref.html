@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        /*
+        ref 的 时候也在收集依赖
+        computed 的 时候 也在收集依赖
+        effect 的 时候都在收集依赖
+         */
+        // import { computed, effect, reactive, watch, watchEffect, ref } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        import { ref, reactive, effect, watch, watchEffect, computed } from "./reactivity.js"
+
+        // 和计算属性很像
+        const state = ref(true) // 装包 就是将变量在包装一次，增加 get 和 set 里面还需要增加依赖收集的功能
+        effect(() => {
+            app.innerHTML = state.value
+        })
+        console.log(state)
+
+        setTimeout(() => {
+            state.value = false
+        }, 1000)
+
+        const rr = ref({
+            a: 1
+        })
+        console.log(rr)
+    </script>
+</body>
+</html>

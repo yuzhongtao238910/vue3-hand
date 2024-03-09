@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="app"></div>
+<script type="text/javascript">
+    // let bb = 1
+    // const aa = (y) => {
+    //     console.log(y)
+    //     bb++
+    //     console.log(bb)
+    //     return bb
+    // }
+    // aa(aa(12))
+
+</script>
+
+    <script type="module">
+        import { h, render } from "./runtime-dom.js"
+        // createVNode的第3个参数只能够传递3种类型 数组 文本 null
+        // render(h('div', null, "23901"), app)
+        // render(h('div', {style: {color: 'red'}}, h('span', null, 'apple')), app)
+
+        // render(h('div', {style: {color: 'red'}}, [
+        //     h('span', null, 'apple'),
+        //     h('span', null, '22222')
+        // ]), app)
+
+
+        // 前后节点是否可以复用
+        // 所谓的复用就意味着可以使用之前的创建的dom节点
+        // 如果标签名字一致，是可以复用的，还有一个key
+        // 标签名和key都一致，是可以复用的
+        // 标签名字相同，key不同也不可以复用
+        //
+        render(h('div', {style: {color: 'red'}, key: 1}, 'yyy'), app)
+        setTimeout(() => {
+            render(h('div', {style: {color: 'blue'}, key: 1}, 'bbb'), app)
+        }, 1000)
+
+
+
+        // render(null, app)
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { reactive, effect } from "../../../../node_modules/@vue/reactivity/dist/reactivity.esm-browser.js"
+        import { reactive } from "./reactivity.js"
+        // 情况1- 使用的是同样内容的代理对象，解决方法：使用映射表weakmap
+        const obj = {
+            name: "jw",
+            age: 30
+        }
+        const per = {
+            name: "apple"
+        }
+        const state1 = reactive(obj)
+        const state3 = reactive(obj)
+        // 情况2- 代理过的对象继续被代理,已经代理过的对象是不能被代理了
+        const state4 = reactive(per)
+        const state5 = reactive(state4)
+        // console.log(25, state4, state5, state4 === state5)
+
+        const state2 = reactive("name")
+        // 同一个对象走代理应该是只用走一次就可以了
+        // 一个对象被代理两次，应该是拿到的同一个代理
+        // console.log(state1, state2, state1 === state3)
+        // state4.age = 888
+        // console.log(state4.age)
+        delete state4.name
+        console.log(state4)
+        /*
+        // 1- 创建一个响应式对象
+        const state = reactive({
+            name: "jw",
+            age: 30
+        })
+        console.log(state)
+        // 2- effect 所有的渲染都是基于effect来实现的 computed watch 组件
+        // 默认叫响应式effect，数据变化会重新执行此函数
+        effect(() => {
+            // 使用类似于react-hook
+            app.innerHTML = state.name + state.age
+        })
+        setTimeout(() => {
+            state.name = "jiang"
+        }, 3000)
+
+        // 3- 属性会收集effect 数据的依赖收集 数据会记录自己在哪个effect之中使用，稍后数据变化
+        // 可以找到对应的effect 来执行
+
+
+         */
+    </script>
+</body>
+</html>

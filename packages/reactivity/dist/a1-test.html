@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <script>
+        function aa() {
+            try {
+                console.log(11)
+                return 22
+            } finally {
+                console.log(33)
+                return 44
+            }
+        }
+        // debugger
+        console.log(aa())
+    </script>
+</body>
+</html>

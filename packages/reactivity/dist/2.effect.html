@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="app"></div>
+    <script type="module">
+        import { reactive, effect } from "./reactivity.js"
+        const obj = {
+            name: "jw",
+            age: 30
+        }
+        const state = reactive(obj)
+        // effect 和 key之间是多对多的关系 ，依赖收集
+        effect(() => { // 使用类似于react-hook
+            // state.name = "bbb"
+            app.innerHTML = state.name + state.age
+        })
+
+
+        effect(() => {
+            const temp = state.name + '-' + state.age
+            console.log(temp)
+        })
+
+
+        setTimeout(() => {
+            state.name = "aaaaaaaaaaa"
+        }, 1000)
+        /*
+            此时这种effect的嵌套会出现问题
+            早期使用栈vue2来解决的stack：在effect之中找activeEffect栈数组的最后一项，执行完毕后进行出栈
+            vue3.2针对嵌套采用父子关系的嵌套
+            activeEffect -> null
+                age -> e1
+                name -> e2
+                address -> null
+            effect(() => {
+                app.innerHTML = state.age
+                effect(() => {
+                    app.innerHTML = state.name
+                })
+                // 这个代码既没有办法track了 就没有办法effect 和 对应的属性进行关联了
+                app.innerHTML = state.address
+            })
+        */
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

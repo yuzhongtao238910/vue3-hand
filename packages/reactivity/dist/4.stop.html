@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { effect, reactive } from "../../../../node_modules/@vue/reactivity/dist/reactivity.esm-browser.js"
+        import { reactive, effect } from "./reactivity.js"
+        // 默认情况下，proxy只能够做一层的代理
+        const state = reactive({name: "jw", address: {
+            n: 316
+            }})
+
+        // console.log(state.name)
+        const runner = effect(() => {
+            // console.log("runner")
+            app.innerHTML = state.address.n
+        }, {
+            scheduler: () => {
+                setTimeout(() => {
+                    // 组件的异步渲染
+                    runner()
+                    // console.log("开始更新")
+                }, 1000)
+            }
+        })
+        // console.log(runner)
+        setTimeout(() => {
+            state.address.n = "banana"
+            // console.log("数据变化了")
+        }, 1000)
+        // runner.effect.stop() // 停止effect的响应式更新，不再收集相关的依赖了
+        // 默认情况下是自动的更新，数据变化后 更新effect
+        // 数据变化了，不更新，我可以自己决定更新
+        // setTimeout(() => {
+        //     // state.name = "banana-1"
+        //     // state.name = "banana-2"
+        //     // state.name = "banana-3"
+        //     console.dir(runner)
+        //     state.name = "banana-4"
+        //     // runner.effect.run() // forceUpdate() 强制更新
+        //     // 在调用了stop方法之中，会停止收集依赖并且清空，此时调用runner/run方法，就只是重新执行了一边effect里面的回调函数
+        //     runner()
+        //     state.name = "banana-100"
+        //     // console.log("apple")
+        // }, 1000)
+        // watch 函数 数据变化了，需要通知我
+    </script>
+</body>
+</html>

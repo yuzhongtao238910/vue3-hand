@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+    /*
+    toRef toRefs ref proxyRefs isRef
+
+    shallowRef 使用的时候是：component:is 语法 比较少用
+    关于ref的使用
+
+    如果在页面渲染的时候 vue之中的模版的ref的值会自动的脱ref .value
+
+    <template> {{ a }} </template>
+
+    const a = ref("123")
+     */
+    // import { proxyRefs, toRefs, toRef, effect, reactive, watch, watchEffect, ref } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+    import { proxyRefs, toRefs, watchEffect, reactive, toRef} from "./reactivity.js";
+
+    const state = reactive({
+        name: "jw",
+        age: 30
+    })
+
+    let {name, age} = toRefs(state)
+
+    watchEffect(() => {
+        let person = proxyRefs({name, age})
+        // person.name -> name.value -> state.name
+        // console.log(name, age, 31)
+        console.log(person, 32, person.name, person.age)
+        app.innerHTML = person.name + person.age
+    })
+    setTimeout(() => {
+        state.name = "xxxxxx"
+    }, 1000)
+</script>
+</body>
+</html>

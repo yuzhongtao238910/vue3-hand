@@ -1,0 +1,20 @@
+{
+  "name": "vue3",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "vue": "^3.4.19"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.0"
+  }
+}

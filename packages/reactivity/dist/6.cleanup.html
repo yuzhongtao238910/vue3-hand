@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { effect, reactive, watch, watchEffect } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        import { reactive, effect, watch, watchEffect } from "./reactivity.js"
+        /*
+        watch 的 场景： 大部分的场景可能是：监控数据的变化，变化后发送数据请求
+
+        模拟一个输入框的场景：百度搜索框
+
+        1 -》 发送请求 2s后才返回
+        2 -》 发送请求 1s后才返回
+
+        由于请求的返回时间的问题，最终的结果应该是2为准，但是实际上以1为准
+
+        如何解决这个问题 在vue2里面如何解决： 下方代码已经给出了
+
+        vue2里面没有这个onCleanup 函数，需要自己进行处理
+
+
+        vue3之中有一个onCleanup
+         */
+        const state = reactive({
+            name: "jw",
+            address: {
+                n: 1
+            },
+            age: 11
+        })
+
+        let timer = 4000
+        const getData = (data) => {
+            timer = timer - 1000
+            console.log(timer, 33)
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    resolve(data)
+                }, timer)
+            })
+        }
+        const arr = []
+        // 什么是闭包？定义函数的作用域和执行函数的作用域不是同一个
+        watch(() => state.age, async (newVal, oldVal, onCleanup) => {
+            // while (arr.length > 0) {
+            //     let fn = arr.shift()
+            //     fn()
+            // }
+
+            // 第二个参数是在发生变化时要调用的回调函数。
+            // 这个回调函数接受三个参数：新值、旧值，以及一个用于注册副作用清理的回调函数。
+            // 该回调函数会在副作用下一次重新执行前调用，可以用来清除无效的副作用，例如等待中的异步请求。
+            let flag = true
+            onCleanup(() => {
+                flag = false
+                console.log("on-cleanup", flag)
+            })
+            // arr.push(() => {
+            //     // 1) 取消操作 取消请求
+            //     // 2） 清理
+            //     // 3） 屏蔽  目前这种方式就是屏蔽
+            //     flag = false
+            // })
+            const r = await getData(newVal)
+            console.log(flag, newVal)
+            flag && (app.innerHTML = r)
+        }, {
+            // flush: 'sync'
+        })
+
+        // 模拟用户输入
+        state.age = 100 // 请求3s后返回100
+        state.age = 200 // 请求2s后返回200
+        state.age = 300 // 请求1s后返回300
+
+
+
+    </script>
+</body>
+</html>
+
+
+
+
+
