@@ -115,6 +115,48 @@ function patchProp(el, key, prevVal, nextVal) {
   }
 }
 
+// packages/runtime-core/src/seq.js
+function getSeq(arr) {
+  const result = [0];
+  const len = arr.length;
+  const p = arr.slice(0).fill(-1);
+  let start;
+  let end;
+  let middle;
+  for (let i2 = 0; i2 < len; i2++) {
+    const arrI = arr[i2];
+    if (arrI !== 0) {
+      let resultLastIndex = result[result.length - 1];
+      if (arr[resultLastIndex] < arrI) {
+        result.push(i2);
+        p[i2] = resultLastIndex;
+        continue;
+      }
+      start = 0;
+      end = result.length - 1;
+      while (start < end) {
+        middle = (start + end) / 2 | 0;
+        if (arr[result[middle]] < arrI) {
+          start = middle + 1;
+        } else {
+          end = middle;
+        }
+      }
+      p[i2] = result[start - 1];
+      result[start] = i2;
+    }
+  }
+  console.log(result, p);
+  let i = result.length;
+  let last = result[i - 1];
+  while (i-- > 0) {
+    result[i] = last;
+    last = p[last];
+  }
+  return result;
+}
+getSeq([2, 3, 1, 5, 6, 8, 7, 9, 4]);
+
 // packages/shared/src/shapeFlag.js
 var ShapeFlags = {
   ELEMNT: 1,
@@ -207,13 +249,18 @@ function createRenderer(renderOptions2) {
       patch(null, child, container);
     });
   };
+  const unmountChildren = (children) => {
+    children.forEach((child) => {
+      unmount(child);
+    });
+  };
   const unmount = (vnode) => {
     const { shapeFlag } = vnode;
     if (shapeFlag & ShapeFlags.ELEMNT) {
       hostRemove(vnode.el);
     }
   };
-  const mountElement = (vnode, container) => {
+  const mountElement = (vnode, container, anchor) => {
     const { type, props, children, shapeFlag } = vnode;
     const el = hostCreateElement(type);
     vnode.el = el;
@@ -229,19 +276,153 @@ function createRenderer(renderOptions2) {
         mountChildren(children, el);
       }
     }
-    hostInsert(el, container);
+    hostInsert(el, container, anchor);
   };
-  const patch = (n1, n2, container) => {
+  const patchProps = (oldProps, newProps, el) => {
+    if (oldProps === newProps) {
+      return;
+    }
+    for (let key in newProps) {
+      let prevVal = oldProps[key];
+      let nextVal = newProps[key];
+      if (prevVal !== nextVal) {
+        hostPatchProp(el, key, prevVal, nextVal);
+      }
+    }
+    for (let key in oldProps) {
+      if (!(key in newProps)) {
+        hostPatchProp(el, key, oldProps[key], {});
+      }
+    }
+  };
+  const patchKeyChildren = (c1, c2, el) => {
+    let i = 0;
+    let e1 = c1.length - 1;
+    let e2 = c2.length - 1;
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[i];
+      const n2 = c2[i];
+      if (isSameVnode(n1, n2)) {
+        patch(n1, n2, el);
+      } else {
+        break;
+      }
+      i++;
+    }
+    while (i <= e1 && i <= e2) {
+      const n1 = c1[e1];
+      const n2 = c2[e2];
+      if (isSameVnode(n1, n2)) {
+        patch(n1, n2, el);
+      } else {
+        break;
+      }
+      e1--;
+      e2--;
+    }
+    if (i > e1) {
+      while (i <= e2) {
+        const nextPos = e2 + 1;
+        console.log(nextPos, 163);
+        const anchor = c2[nextPos]?.el;
+        console.log(anchor, 165);
+        patch(null, c2[i], el, anchor);
+        i++;
+      }
+    } else if (i > e2) {
+      while (i <= e1) {
+        unmount(c1[i]);
+        i++;
+      }
+    }
+    console.log(i, e1, e2);
+    let s1 = i;
+    let s2 = i;
+    const keyToNewIndexMap = /* @__PURE__ */ new Map();
+    const toBePatched = e2 - s2 + 1;
+    const newIndexToOldIndex = new Array(toBePatched).fill(0);
+    for (let i2 = s2; i2 <= e2; i2++) {
+      keyToNewIndexMap.set(c2[i2].key, i2);
+    }
+    for (let i2 = s1; i2 <= e1; i2++) {
+      const vnode = c1[i2];
+      let newIndex = keyToNewIndexMap.get(vnode.key);
+      if (newIndex == void 0) {
+        unmount(vnode);
+      } else {
+        newIndexToOldIndex[newIndex - s2] = i2 + 1;
+        patch(vnode, c2[newIndex], el);
+      }
+    }
+    const increasingNewIndexSequence = getSeq(newIndexToOldIndex);
+    let j = increasingNewIndexSequence.length - 1;
+    for (let i2 = toBePatched - 1; i2 >= 0; i2--) {
+      const current = s2 + i2;
+      const curNode = c2[current];
+      const anchor = c2[current + 1]?.el;
+      if (newIndexToOldIndex[i2] == 0) {
+        patch(null, curNode, el, anchor);
+      } else {
+        if (i2 === increasingNewIndexSequence[j]) {
+          j--;
+        } else {
+          hostInsert(curNode.el, el, anchor);
+        }
+      }
+    }
+  };
+  const patchChildren = (n1, n2, el) => {
+    const c1 = n1.children;
+    const c2 = n2.children;
+    const prevShapeFlag = n1.shapeFlag;
+    const shapeFlag = n2.shapeFlag;
+    if (shapeFlag & ShapeFlags.TEXT_CHILDREN) {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        unmountChildren(c1);
+      }
+      if (c1 !== c2) {
+        hostSetElementText(el, c2);
+      }
+    } else {
+      if (prevShapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          patchKeyChildren(c1, c2, el);
+        } else {
+          unmountChildren(c1);
+        }
+      } else {
+        if (prevShapeFlag & ShapeFlags.TEXT_CHILDREN) {
+          hostSetElementText(el, "");
+        }
+        if (shapeFlag & ShapeFlags.ARRAY_CHILDREN) {
+          mountChildren(c2, el);
+        }
+      }
+    }
+  };
+  const patchElement = (n1, n2) => {
+    let el = n2.el = n1.el;
+    const oldProps = n1.props || {};
+    const newProps = n2.props || {};
+    patchProps(oldProps, newProps, el);
+    patchChildren(n1, n2, el);
+  };
+  const processElement = (n1, n2, container, anchor) => {
+    if (n1 == null) {
+      console.log("\u8D70\u4E86\u4E00\u6B21\u521D\u6B21\u6E32\u67D3\u7684\u903B\u8F91");
+      mountElement(n2, container, anchor);
+    } else {
+      console.log("\u8D70\u66F4\u65B0\u7684\u903B\u8F91");
+      console.log(n1, n2);
+      patchElement(n1, n2);
+    }
+  };
+  const patch = (n1, n2, container, anchor = null) => {
     if (n1 && !isSameVnode(n1, n2)) {
       unmount(n1);
       n1 = null;
     }
-    if (n1 == null) {
-      console.log("\u8D70\u4E86\u4E00\u6B21\u521D\u6B21\u6E32\u67D3\u7684\u903B\u8F91");
-      mountElement(n2, container);
-    } else {
-      console.log("\u8D70\u66F4\u65B0\u7684\u903B\u8F91");
-    }
+    processElement(n1, n2, container, anchor);
   };
   const render2 = (vnode, container) => {
     if (vnode == null) {

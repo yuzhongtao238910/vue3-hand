@@ -7,6 +7,11 @@
 <body>
 <div id="app"></div>
 <script type="text/javascript">
+    let yyy = 10
+
+    let bbb = 1
+    let aa = (bbb = yyy)
+    console.log(aa, bbb, yyy)
     // let bb = 1
     // const aa = (y) => {
     //     console.log(y)
@@ -36,10 +41,74 @@
         // 标签名和key都一致，是可以复用的
         // 标签名字相同，key不同也不可以复用
         //
-        render(h('div', {style: {color: 'red'}, key: 1}, 'yyy'), app)
+        // render(h('div', {style: {color: 'red'}, key: 1}, [
+        //     h('li', {key: 'a'}, 'a'),
+        //     h('li', {key: 'b'}, 'b'),
+        //     h('li', {key: 'c'}, 'c')
+        // ]), app)
+        // setTimeout(() => {
+        //     render(h('div', { key: 1}, [
+        //         h('li', {key: 'a'}, 'a'),
+        //         h('li', {key: 'b'}, 'b'),
+        //         h('li', {key: 'd'}, 'd')
+        //     ]), app)
+        // }, 1000)
+
+        // render(h('div', {style: {color: 'red'}, key: 1}, [
+        //     h('li', {key: 'a'}, 'a'),
+        //
+        // ]), app)
+        // setTimeout(() => {
+        //     render(h('div', { key: 1}, [
+        //         h('li', {key: 'a'}, 'a'),
+        //         h('li', {key: 'b'}, 'b'),
+        //         h('li', {key: 'c'}, 'c'),
+        //         h('li', {key: 'd'}, 'd')
+        //     ]), app)
+        // }, 1000)
+
+
+        // render(h('div', {style: {color: 'red'}, key: 1}, [
+        //     h('li', {key: 'a'}, 'a'),
+        //     h('li', {key: 'b'}, 'b'),
+        //     h('li', {key: 'c'}, 'c'),
+        //
+        // ]), app)
+        // setTimeout(() => {
+        //     render(h('div', { key: 1}, [
+        //         h('li', {key: 'd'}, 'd'),
+        //         h('li', {key: 'e'}, 'e'),
+        //         h('li', {key: 'a'}, 'a'),
+        //         h('li', {key: 'b'}, 'b'),
+        //         h('li', {key: 'c'}, 'c'),
+        //     ]), app)
+        // }, 1000)
+
+        render(h('div', {style: {color: 'red'}, key: 1}, [
+            h('li', {key: 'a'}, 'a'),
+            h('li', {key: 'b'}, 'b'),
+            h('li', {key: 'c'}, 'c'),
+            h('li', {key: 'd'}, 'd'),
+            h('li', {key: 'e'}, 'e'),
+            h('li', {key: 'q'}, 'q'),
+            h('li', {key: 'f'}, 'f'),
+            h('li', {key: 'g'}, 'g'),
+
+        ]), app)
         setTimeout(() => {
-            render(h('div', {style: {color: 'blue'}, key: 1}, 'bbb'), app)
-        }, 1000)
+            render(h('div', { key: 1}, [
+
+                h('li', {key: 'a'}, 'a'),
+                h('li', {key: 'b'}, 'b'),
+                h('li', {key: 'd'}, 'dd'),
+                h('li', {key: 'c'}, 'cc'),
+                h('li', {key: 'e'}, 'ee'),
+                h('li', {key: 'h'}, 'h'),
+                h('li', {key: 'f'}, 'f'),
+                h('li', {key: 'g'}, 'g'),
+            ]), app)
+        }, 2000)
+
 
 
 
