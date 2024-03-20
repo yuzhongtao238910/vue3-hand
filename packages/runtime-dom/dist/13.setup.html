@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import { Fragment, Text, h, render, reactive, toRefs } from "../../../../node_modules/vue/dist/vue.runtime.esm-browser.js"
+        const VueComponent = {
+            props: {
+                a: Number,
+                b: Number
+            },
+            setup() {
+                // 业务逻辑在vue3之中都在setup里面
+                // 提高功能的耦合度
+                // setup的返回值会放到render函数的参数的proxy之中的
+                const state = reactive({
+                    name: 'jw',
+                    age: 30
+                })
+                const setAge = () => {
+                    state.age++
+                }
+
+
+                // 如果希望直接渲染内容，建议直接在setup之中写render函数，不建议将render函数写在外面
+                // 如果同时写的话setup里面的优先级更高
+
+                // render 函数也可以写在这里
+                return function render() { // proxy.name.value  会自动拆包的逻辑 proxyRefs
+                    return h(Fragment, [h(Text, state.name), h(Text, state.age), h('button', {onClick: setAge}, '123')])
+                }
+                // return {
+                //     ...toRefs(state),
+                //     setAge
+                // } // setup 返回一个对象，这个对象可以通过proxy来取值
+            },
+            // render(proxy) { // proxy.name.value  会自动拆包的逻辑 proxyRefs
+            //     return h(Fragment, [h(Text, proxy.name), h(Text, proxy.age), h('button', {onClick: proxy.setAge}, '123'), h('span', 222)])
+            // }
+        }
+        render(h(VueComponent, {a : 1, b: 2}), app)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

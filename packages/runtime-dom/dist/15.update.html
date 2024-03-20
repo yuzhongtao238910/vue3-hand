@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="text/javascript">
+        const aa = (a) => {
+            console.log(a)
+            return a + 1
+        }
+        // console.log(aa(aa(1)))
+    </script>
+    <script type="module">
+        import {Fragment, h, render, Text} from "./runtime-dom.js";
+        // const ChildComponent = {
+        //     props: {
+        //         message: String
+        //     },
+        //     render(proxy) {
+        //         return h("span", proxy.message)
+        //     }
+        // }
+        const VueComponent = {
+            data() {
+                return {
+                    name: "apple",
+                    age: 0,
+                    flag: true
+                }
+            },
+            props: {
+                a: Number
+            },
+            render(proxy) { // 允许编写模版的
+                // const hh = h(Fragment, [h('button', "更新组件"), h(ChildComponent, {
+                //     message: proxy.flag ? "ok" : "nook"
+                // })])
+                // console.log(hh)
+                return h(Fragment, [h('button', {onClick: () => {
+                        // debugger
+                        proxy.flag = !proxy.flag
+                    }}, "更新组件" + proxy.flag)])
+            }
+        }
+        render(h(VueComponent), app)
+    </script>
+</body>
+</html>

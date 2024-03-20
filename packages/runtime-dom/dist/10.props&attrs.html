@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        import {Fragment, h, render, Text} from "./runtime-dom.js";
+        // import { Fragment, Text, h, render } from "../../../../node_modules/vue/dist/vue.runtime.esm-browser.js"
+        // props 是响应式的，但是是浅响应式的 也可以不是响应式的
+        // attrs在开发环境下是响应式的，生产环境下是非响应式的
+        // attrs = 用户传递props - propsOptions
+        // 为了自己无法消费的数据可以快速的传递给其他组件
+        const VueComponent = {
+            data() {
+                console.log(this, 18)
+                return {
+                    name: "apple",
+                    age: 0
+                }
+            },
+            // template: '<div>hello</div>',
+            props: {
+                a: Object,
+                b: Number
+            },
+            render(proxy) { // 允许编写模版的
+                // proxy.age -> instance.state / instance.props / instance.attrs
+                setTimeout(() => {
+                    // proxy.b = 1000
+                }, 1000)
+                // console.log(proxy.a, proxy.$attrs.c)
+                return h(Fragment, [h(Text, proxy.name), h(Text, proxy.b)])
+            }
+
+            // 属性分为两种：props attrs
+        }
+        render(h(VueComponent, {a: {a: 1}, b: 2, c: 1}), app)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

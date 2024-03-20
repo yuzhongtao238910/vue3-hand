@@ -1,5 +1,5 @@
 import { isFunction } from "../../shared/src/index.js";
-import { ReactiveEffect, activeEffect, trackEffect, triggerEffect } from "./effect.js"
+import { ReactiveEffect, trackEffect, triggerEffect } from "./effect.js"
 
 
 // 对象：属性：effect

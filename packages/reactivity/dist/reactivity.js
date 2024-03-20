@@ -1,5 +1,5 @@
 // packages/reactivity/src/effect.js
-var activeEffect = void 0;
+var activeEffect12 = void 0;
 var id = 0;
 function cleanupEffect(effect2) {
   const { deps } = effect2;
@@ -10,6 +10,7 @@ function cleanupEffect(effect2) {
 }
 var ReactiveEffect = class {
   constructor(fn, scheduler, flag) {
+    console.log("--------------");
     this.fn = fn;
     this.id = id++;
     this.scheduler = scheduler;
@@ -25,12 +26,15 @@ var ReactiveEffect = class {
       return this.fn();
     }
     try {
-      this.parent = activeEffect;
-      activeEffect = this;
+      this.parent = activeEffect12;
+      activeEffect12 = this;
+      console.log(activeEffect12);
       cleanupEffect(this);
+      console.log(activeEffect12);
       return this.fn();
     } finally {
-      activeEffect = this.parent;
+      console.log("finally", activeEffect12);
+      activeEffect12 = this.parent;
       this.parent = null;
     }
   }
@@ -50,7 +54,7 @@ function effect(fn, options = {}) {
 }
 var targetMap = /* @__PURE__ */ new WeakMap();
 function track(target, key) {
-  if (activeEffect) {
+  if (activeEffect12) {
     let depsMap = targetMap.get(target);
     if (!depsMap) {
       targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
@@ -63,10 +67,10 @@ function track(target, key) {
   }
 }
 function trackEffect(dep) {
-  let shouldTrack = !dep.has(activeEffect);
+  let shouldTrack = !dep.has(activeEffect12);
   if (shouldTrack) {
-    dep.add(activeEffect);
-    activeEffect.deps.push(dep);
+    dep.add(activeEffect12);
+    activeEffect12.deps.push(dep);
   }
 }
 function trigger(target, key, newValue, oldValue) {
@@ -78,9 +82,12 @@ function trigger(target, key, newValue, oldValue) {
   triggerEffect(deps);
 }
 function triggerEffect(deps) {
+  if (!deps) {
+    return;
+  }
   const effects = [...deps];
   effects && effects.forEach((effect2) => {
-    if (effect2 !== activeEffect) {
+    if (effect2 !== activeEffect12) {
       if (effect2.scheduler) {
         effect2.scheduler();
       } else {
@@ -89,6 +96,32 @@ function triggerEffect(deps) {
     }
   });
 }
+
+// packages/shared/src/shapeFlag.js
+var ShapeFlags = {
+  ELEMNT: 1,
+  // 元素
+  FUNCTIONAL_COMPONENT: 1 << 1,
+  // 函数式组件
+  STATEFUL_COMPONENT: 1 << 2,
+  // 普通状态组件
+  TEXT_CHILDREN: 1 << 3,
+  // 元素的儿子是文本
+  ARRAY_CHILDREN: 1 << 4,
+  // 元素的儿子是数组
+  SLOTS_CHILDREN: 1 << 5,
+  // 组件的插槽
+  TELEPORT: 1 << 6,
+  // 传送门组件
+  SUSPENSE: 1 << 7,
+  // 异步加载组件
+  COMPONENT_SHOULD_KEPP_ALIVE: 1 << 8,
+  // keep-alive
+  COMPONENT_KEPT_ALIVE: 1 << 9,
+  // keep-alive
+  // 组件
+  COMPONENT: 1 << 2 | 1 << 1
+};
 
 // packages/shared/src/index.js
 var isObject = (val) => {
@@ -116,6 +149,7 @@ var RefImpl = class {
     this._value = toReactive(rawValue);
   }
   get value() {
+    console.log("ref");
     trackEffect(this.dep);
     return this._value;
   }
@@ -135,14 +169,15 @@ var ObjectRefImpl = class {
   __v_isRef = true;
   // 表示后续我们可以增加拆包的逻辑
   constructor(object, key) {
-    this.object = object;
-    this.key = key;
+    this._object = object;
+    this._key = key;
   }
   get value() {
-    return this.object[this.key];
+    console.log(this._object, this._key, 51, activeEffect12, 51, "----------------");
+    return this._object[this._key];
   }
   set value(newVal) {
-    this.object[this.key] = newVal;
+    this._object[this._key] = newVal;
   }
 };
 function toRef(object, key) {
@@ -158,8 +193,17 @@ function toRefs(object) {
 function proxyRefs(object) {
   return new Proxy(object, {
     get(target, key, receiver) {
+      debugger;
+      console.log(activeEffect12, 76, key);
+      console.log(target, key, 79);
       const v = Reflect.get(target, key, receiver);
-      return isRef(v) ? v.value : v;
+      const v1 = target[key];
+      if (isRef(v)) {
+        console.log(activeEffect12, 89, key);
+        return v.value;
+      } else {
+        return v;
+      }
     },
     set(target, key, newVal, receiver) {
       const oldVal = Reflect.get(target, key, receiver);
@@ -177,6 +221,7 @@ function proxyRefs(object) {
 var mutableHandlers = {
   // 这里面的receiver就是proxy
   get(target, key, receiver) {
+    console.log(activeEffect12, 15, key);
     if (key === "__v_isReactive") {
       return true;
     }
@@ -187,6 +232,7 @@ var mutableHandlers = {
       return reactive(target[key]);
     }
     const res = Reflect.get(target, key, receiver);
+    console.log(activeEffect12, target, key);
     track(target, key);
     return res;
   },
@@ -213,6 +259,7 @@ function reactive(value) {
   if (value["__v_isReactive"]) {
     return value;
   }
+  console.log(activeEffect12, 288888);
   const proxy = new Proxy(value, mutableHandlers);
   reactiveMap.set(value, proxy);
   return proxy;
@@ -315,7 +362,7 @@ function computed(getterOrOptions) {
 }
 export {
   ReactiveEffect,
-  activeEffect,
+  activeEffect12,
   computed,
   dowatch,
   effect,

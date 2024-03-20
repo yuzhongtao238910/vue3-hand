@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <script type="module">
+        import {Fragment, h, render, Text, toRef, reactive, effect, proxyRefs} from "./runtime-dom.js";
+        // import { Fragment, Text, h, render, reactive, toRefs, toRef, effect, proxyRefs } from "../../../../node_modules/vue/dist/vue.runtime.esm-browser.js"
+
+        const state = reactive({
+            name: 'aaa',
+            age: 111
+        })
+        const aa = proxyRefs(state)
+        // console.log(aa)
+        effect(() => {
+            console.log(aa.age, aa.name)
+        })
+        setTimeout(() => {
+            aa.age = '111111'
+        }, 2000)
+    </script>
+</body>
+</html>

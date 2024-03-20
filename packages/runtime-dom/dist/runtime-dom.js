@@ -119,7 +119,7 @@ function patchProp(el, key, prevVal, nextVal) {
 function getSeq(arr) {
   const result = [0];
   const len = arr.length;
-  const p = arr.slice(0).fill(-1);
+  const p2 = arr.slice(0).fill(-1);
   let start;
   let end;
   let middle;
@@ -129,7 +129,7 @@ function getSeq(arr) {
       let resultLastIndex = result[result.length - 1];
       if (arr[resultLastIndex] < arrI) {
         result.push(i2);
-        p[i2] = resultLastIndex;
+        p2[i2] = resultLastIndex;
         continue;
       }
       start = 0;
@@ -142,16 +142,16 @@ function getSeq(arr) {
           end = middle;
         }
       }
-      p[i2] = result[start - 1];
+      p2[i2] = result[start - 1];
       result[start] = i2;
     }
   }
-  console.log(result, p);
+  console.log(result, p2);
   let i = result.length;
   let last = result[i - 1];
   while (i-- > 0) {
     result[i] = last;
-    last = p[last];
+    last = p2[last];
   }
   return result;
 }
@@ -195,6 +195,8 @@ function isString(value) {
 }
 
 // packages/runtime-core/src/createVNode.js
+var Text = Symbol();
+var Fragment = Symbol();
 function isVNode(value) {
   return value.__v_isVNode;
 }
@@ -202,7 +204,7 @@ function isSameVnode(n1, n2) {
   return n1.type === n2.type && n1.key === n2.key;
 }
 function createVNode(type, props, children = null) {
-  const shapeFlag = isString(type) ? ShapeFlags.ELEMNT : 0;
+  const shapeFlag = isString(type) ? ShapeFlags.ELEMNT : isObject(type) ? ShapeFlags.STATEFUL_COMPONENT : 0;
   const vnode = {
     __v_isVNode: true,
     // 判断对象是不是虚拟节点可以采用这个字段
@@ -227,6 +229,316 @@ function createVNode(type, props, children = null) {
     vnode.shapeFlag |= type2;
   }
   return vnode;
+}
+
+// packages/reactivity/dist/reactivity.js
+var activeEffect12 = void 0;
+var id = 0;
+function cleanupEffect(effect2) {
+  const { deps } = effect2;
+  for (let i = 0; i < deps.length; i++) {
+    deps[i].delete(effect2);
+  }
+  effect2.deps.length = 0;
+}
+var ReactiveEffect = class {
+  constructor(fn, scheduler, flag) {
+    console.log("--------------");
+    this.fn = fn;
+    this.id = id++;
+    this.scheduler = scheduler;
+    this.flag = flag;
+  }
+  active = true;
+  // effect是否是激活状态
+  parent = null;
+  deps = [];
+  // 使用effect来记录每一个effect所依赖的dep，所依赖的属性
+  run() {
+    if (!this.active) {
+      return this.fn();
+    }
+    try {
+      this.parent = activeEffect12;
+      activeEffect12 = this;
+      console.log(activeEffect12);
+      cleanupEffect(this);
+      console.log(activeEffect12);
+      return this.fn();
+    } finally {
+      console.log("finally", activeEffect12);
+      activeEffect12 = this.parent;
+      this.parent = null;
+    }
+  }
+  stop() {
+    if (this.active) {
+      this.active = false;
+      cleanupEffect(this);
+    }
+  }
+};
+var targetMap = /* @__PURE__ */ new WeakMap();
+function track(target, key) {
+  if (activeEffect12) {
+    let depsMap = targetMap.get(target);
+    if (!depsMap) {
+      targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
+    }
+    let dep = depsMap.get(key);
+    if (!dep) {
+      depsMap.set(key, dep = /* @__PURE__ */ new Set());
+    }
+    trackEffect(dep);
+  }
+}
+function trackEffect(dep) {
+  let shouldTrack = !dep.has(activeEffect12);
+  if (shouldTrack) {
+    dep.add(activeEffect12);
+    activeEffect12.deps.push(dep);
+  }
+}
+function trigger(target, key, newValue, oldValue) {
+  const depsMap = targetMap.get(target);
+  if (!depsMap) {
+    return;
+  }
+  const deps = depsMap.get(key);
+  triggerEffect(deps);
+}
+function triggerEffect(deps) {
+  if (!deps) {
+    return;
+  }
+  const effects = [...deps];
+  effects && effects.forEach((effect2) => {
+    if (effect2 !== activeEffect12) {
+      if (effect2.scheduler) {
+        effect2.scheduler();
+      } else {
+        effect2.run();
+      }
+    }
+  });
+}
+var ShapeFlags2 = {
+  ELEMNT: 1,
+  // 元素
+  FUNCTIONAL_COMPONENT: 1 << 1,
+  // 函数式组件
+  STATEFUL_COMPONENT: 1 << 2,
+  // 普通状态组件
+  TEXT_CHILDREN: 1 << 3,
+  // 元素的儿子是文本
+  ARRAY_CHILDREN: 1 << 4,
+  // 元素的儿子是数组
+  SLOTS_CHILDREN: 1 << 5,
+  // 组件的插槽
+  TELEPORT: 1 << 6,
+  // 传送门组件
+  SUSPENSE: 1 << 7,
+  // 异步加载组件
+  COMPONENT_SHOULD_KEPP_ALIVE: 1 << 8,
+  // keep-alive
+  COMPONENT_KEPT_ALIVE: 1 << 9,
+  // keep-alive
+  // 组件
+  COMPONENT: 1 << 2 | 1 << 1
+};
+var isObject2 = (val) => {
+  return val != null && typeof val === "object";
+};
+function isRef(value) {
+  return !!(value && value.__v_isRef);
+}
+function proxyRefs(object) {
+  return new Proxy(object, {
+    get(target, key, receiver) {
+      debugger;
+      console.log(activeEffect12, 76, key);
+      console.log(target, key, 79);
+      const v = Reflect.get(target, key, receiver);
+      const v1 = target[key];
+      if (isRef(v)) {
+        console.log(activeEffect12, 89, key);
+        return v.value;
+      } else {
+        return v;
+      }
+    },
+    set(target, key, newVal, receiver) {
+      const oldVal = Reflect.get(target, key, receiver);
+      if (isRef(oldVal)) {
+        oldVal.value = newVal;
+        return true;
+      } else {
+        return Reflect.set(target, key, newVal, receiver);
+      }
+    }
+  });
+}
+var mutableHandlers = {
+  // 这里面的receiver就是proxy
+  get(target, key, receiver) {
+    console.log(activeEffect12, 15, key);
+    if (key === "__v_isReactive") {
+      return true;
+    }
+    if (isRef(target[key])) {
+      return target[key].value;
+    }
+    if (isObject2(target[key])) {
+      return reactive(target[key]);
+    }
+    const res = Reflect.get(target, key, receiver);
+    console.log(activeEffect12, target, key);
+    track(target, key);
+    return res;
+  },
+  set(target, key, newValue, receiver) {
+    const oldValue = Reflect.get(target, key, receiver);
+    const r = Reflect.set(target, key, newValue, receiver);
+    if (oldValue !== newValue) {
+      trigger(target, key, newValue, oldValue);
+    }
+    return r;
+  }
+};
+var reactiveMap = /* @__PURE__ */ new WeakMap();
+function reactive(value) {
+  if (!isObject2(value)) {
+    return value;
+  }
+  let existingProxy = reactiveMap.get(value);
+  if (existingProxy) {
+    return existingProxy;
+  }
+  if (value["__v_isReactive"]) {
+    return value;
+  }
+  console.log(activeEffect12, 288888);
+  const proxy = new Proxy(value, mutableHandlers);
+  reactiveMap.set(value, proxy);
+  return proxy;
+}
+
+// packages/runtime-core/src/scheduler.js
+var queue = [];
+var isFlushing = false;
+var p = Promise.resolve();
+function queueJob(job) {
+  if (!queue.includes(job)) {
+    queue.push(job);
+  }
+  if (!isFlushing) {
+    isFlushing = true;
+    p.then(() => {
+      isFlushing = false;
+      let copyQueue = queue.slice(0);
+      queue.length = 0;
+      copyQueue.forEach((job2) => {
+        job2();
+      });
+      copyQueue.length = 0;
+    });
+  }
+}
+
+// packages/runtime-core/src/component.js
+function createComponentInstance(n2) {
+  const instance = {
+    state: {},
+    vnode: n2,
+    // 组件的虚拟节点
+    update: null,
+    // 一个自定义的更新方法，如果用户希望强制更新，就可以调用这个方法
+    isMounted: false,
+    // 默认组件没有初始化，初始化后会将此属性isMounted 变为true
+    subTree: null,
+    attrs: {},
+    props: {},
+    propsOptions: n2.type.props || {},
+    // 组件之中接收的属性
+    proxy: null,
+    render: null,
+    setupState: {}
+  };
+  return instance;
+}
+var initProps = (instance, userProps) => {
+  const attrs = {};
+  const props = {};
+  const options = instance.propsOptions || {};
+  if (userProps) {
+    for (let key in userProps) {
+      const value = userProps[key];
+      if (key in options) {
+        props[key] = value;
+      } else {
+        attrs[key] = value;
+      }
+    }
+  }
+  instance.attrs = attrs;
+  instance.props = reactive(props);
+};
+var publicProperties = {
+  $attrs: (i) => i.attrs
+  // proxy.$attrs
+};
+function setupComponent(instance) {
+  const { props, type } = instance.vnode;
+  instance.vnode.component = instance;
+  initProps(instance, props);
+  instance.proxy = new Proxy(instance, {
+    get(target, key, receiver) {
+      const { state, props: props2, setupState } = target;
+      console.log(activeEffect12, 57, key);
+      if (key in setupState) {
+        return setupState[key];
+      }
+      if (state && key in state) {
+        return state[key];
+      } else if (key in props2) {
+        return props2[key];
+      }
+      let getter = publicProperties[key];
+      if (getter) {
+        return getter(instance);
+      }
+    },
+    set(target, key, newValue, receiver) {
+      const { state, props: props2, setupState } = target;
+      if (key in setupState) {
+        setupState[key] = newValue;
+        return true;
+      }
+      if (state && key in state) {
+        state[key] = newValue;
+        return true;
+      } else if (key in props2) {
+        console.warn("\u4E0D\u5141\u8BB8\u4FEE\u6539props");
+        return true;
+      }
+      return true;
+    }
+  });
+  let { data, setup, render: render2 } = type;
+  if (setup) {
+    const setupResult = setup();
+    if (isFunction(setupResult)) {
+      instance.render = setupResult;
+    } else {
+      instance.setupState = proxyRefs(setupResult);
+    }
+  }
+  if (isFunction(data)) {
+    instance.state = reactive(data.call(instance.proxy));
+  }
+  if (!instance.render) {
+    instance.render = render2;
+  }
 }
 
 // packages/runtime-core/src/renderer.js
@@ -255,10 +567,11 @@ function createRenderer(renderOptions2) {
     });
   };
   const unmount = (vnode) => {
-    const { shapeFlag } = vnode;
-    if (shapeFlag & ShapeFlags.ELEMNT) {
-      hostRemove(vnode.el);
+    const { shapeFlag, type, children } = vnode;
+    if (type === Fragment) {
+      return unmountChildren(children);
     }
+    hostRemove(vnode.el);
   };
   const mountElement = (vnode, container, anchor) => {
     const { type, props, children, shapeFlag } = vnode;
@@ -335,7 +648,6 @@ function createRenderer(renderOptions2) {
         i++;
       }
     }
-    console.log(i, e1, e2);
     let s1 = i;
     let s2 = i;
     const keyToNewIndexMap = /* @__PURE__ */ new Map();
@@ -409,12 +721,113 @@ function createRenderer(renderOptions2) {
   };
   const processElement = (n1, n2, container, anchor) => {
     if (n1 == null) {
-      console.log("\u8D70\u4E86\u4E00\u6B21\u521D\u6B21\u6E32\u67D3\u7684\u903B\u8F91");
       mountElement(n2, container, anchor);
     } else {
-      console.log("\u8D70\u66F4\u65B0\u7684\u903B\u8F91");
-      console.log(n1, n2);
       patchElement(n1, n2);
+    }
+  };
+  const processText = (n1, n2, el) => {
+    if (n1 === null) {
+      console.log("\u521D\u59CB\u5316\u7684text", 390);
+      hostInsert(n2.el = hostCreateText(n2.children), el);
+    } else {
+      let el2 = n2.el = n1.el;
+      if (n1.children === n2.children) {
+        return;
+      }
+      hostSetText(el2, n2.children);
+    }
+  };
+  function updateProps(instance, nextProps) {
+    let prevProps = instance.props;
+    for (let key in nextProps) {
+      prevProps[key] = nextProps[key];
+    }
+    for (let key in prevProps) {
+      if (!(key in nextProps)) {
+        delete prevProps[key];
+      }
+    }
+  }
+  function updatePreRender(instance, next) {
+    instance.next = null;
+    instance.vnode = next;
+    updateProps(instance, next.props);
+  }
+  const setupRendererEffect = (instance, el, anchor) => {
+    const componentUpdateFn = () => {
+      debugger;
+      console.log(activeEffect12, 437);
+      if (!instance.isMounted) {
+        console.log(instance.proxy, 448);
+        const subTree = instance.render.call(instance.proxy, instance.proxy);
+        patch(null, subTree, el, anchor);
+        instance.subTree = subTree;
+        instance.isMounted = true;
+      } else {
+        const prevSubTree = instance.subTree;
+        const next = instance.next;
+        if (next) {
+          updatePreRender(instance, next);
+        }
+        const nextSubTree = instance.render.call(instance.proxy, instance.proxy);
+        instance.subTree = nextSubTree;
+        patch(prevSubTree, nextSubTree, el, anchor);
+      }
+    };
+    const effect2 = new ReactiveEffect(componentUpdateFn, () => {
+      debugger;
+      queueJob(instance.update);
+    });
+    const update = instance.update = effect2.run.bind(effect2);
+    update();
+  };
+  const mountComponent = (n2, el, anchor) => {
+    const instance = createComponentInstance(n2);
+    setupComponent(instance);
+    setupRendererEffect(instance, el, anchor);
+  };
+  function hasChanged(oldProps = {}, newProps = {}) {
+    let oldKeys = Object.keys(oldProps);
+    let newKeys = Object.keys(newProps);
+    if (oldKeys.length !== newKeys) {
+      return true;
+    }
+    for (let i = 0; i < newKeys.length; i++) {
+      const key = newKeys[i];
+      if (newProps[key] !== oldProps[key]) {
+        return false;
+      }
+    }
+    return false;
+  }
+  function shouldComponentUpdate(n1, n2) {
+    const oldProps = n1.props;
+    const newProps = n2.props;
+    if (oldProps == newProps) {
+      return false;
+    }
+    return hasChanged(oldProps, newProps);
+  }
+  const updateComponent = (n1, n2, el, anchor) => {
+    const instance = n2.component = n1.component;
+    if (shouldComponentUpdate(n1, n2)) {
+      instance.next = n2;
+      instance.update();
+    }
+  };
+  const processComponent = (n1, n2, el, anchor) => {
+    if (n1 == null) {
+      mountComponent(n2, el, anchor);
+    } else {
+      updateComponent(n1, n2, el, anchor);
+    }
+  };
+  const processFragment = (n1, n2, el) => {
+    if (n1 == null) {
+      mountChildren(n2.children, el);
+    } else {
+      patchKeyChildren(n1.children, n2.children, el);
     }
   };
   const patch = (n1, n2, container, anchor = null) => {
@@ -422,9 +835,25 @@ function createRenderer(renderOptions2) {
       unmount(n1);
       n1 = null;
     }
-    processElement(n1, n2, container, anchor);
+    const { type, shapeFlag } = n2;
+    console.log(type, shapeFlag);
+    switch (type) {
+      case Text:
+        processText(n1, n2, container);
+        break;
+      case Fragment:
+        processFragment(n1, n2, container);
+        break;
+      default:
+        if (shapeFlag & ShapeFlags.ELEMNT) {
+          processElement(n1, n2, container, anchor);
+        } else if (shapeFlag & ShapeFlags.COMPONENT) {
+          processComponent(n1, n2, container, anchor);
+        }
+    }
   };
   const render2 = (vnode, container) => {
+    debugger;
     if (vnode == null) {
       if (container._vnode) {
         unmount(container._vnode);
@@ -440,19 +869,20 @@ function createRenderer(renderOptions2) {
 }
 
 // packages/reactivity/src/effect.js
-var activeEffect = void 0;
-var id = 0;
-function cleanupEffect(effect2) {
+var activeEffect122 = void 0;
+var id2 = 0;
+function cleanupEffect2(effect2) {
   const { deps } = effect2;
   for (let i = 0; i < deps.length; i++) {
     deps[i].delete(effect2);
   }
   effect2.deps.length = 0;
 }
-var ReactiveEffect = class {
+var ReactiveEffect2 = class {
   constructor(fn, scheduler, flag) {
+    console.log("--------------");
     this.fn = fn;
-    this.id = id++;
+    this.id = id2++;
     this.scheduler = scheduler;
     this.flag = flag;
   }
@@ -466,62 +896,68 @@ var ReactiveEffect = class {
       return this.fn();
     }
     try {
-      this.parent = activeEffect;
-      activeEffect = this;
-      cleanupEffect(this);
+      this.parent = activeEffect122;
+      activeEffect122 = this;
+      console.log(activeEffect122);
+      cleanupEffect2(this);
+      console.log(activeEffect122);
       return this.fn();
     } finally {
-      activeEffect = this.parent;
+      console.log("finally", activeEffect122);
+      activeEffect122 = this.parent;
       this.parent = null;
     }
   }
   stop() {
     if (this.active) {
       this.active = false;
-      cleanupEffect(this);
+      cleanupEffect2(this);
     }
   }
 };
 function effect(fn, options = {}) {
-  const _effect = new ReactiveEffect(fn, options.scheduler, "effect");
+  const _effect = new ReactiveEffect2(fn, options.scheduler, "effect");
   _effect.run();
   const runner = _effect.run.bind(_effect);
   runner.effect = _effect;
   return runner;
 }
-var targetMap = /* @__PURE__ */ new WeakMap();
-function track(target, key) {
-  if (activeEffect) {
-    let depsMap = targetMap.get(target);
+var targetMap2 = /* @__PURE__ */ new WeakMap();
+function track2(target, key) {
+  if (activeEffect122) {
+    let depsMap = targetMap2.get(target);
     if (!depsMap) {
-      targetMap.set(target, depsMap = /* @__PURE__ */ new Map());
+      targetMap2.set(target, depsMap = /* @__PURE__ */ new Map());
     }
     let dep = depsMap.get(key);
     if (!dep) {
       depsMap.set(key, dep = /* @__PURE__ */ new Set());
     }
-    trackEffect(dep);
+    trackEffect2(dep);
   }
 }
-function trackEffect(dep) {
-  let shouldTrack = !dep.has(activeEffect);
+function trackEffect2(dep) {
+  let shouldTrack = !dep.has(activeEffect122);
   if (shouldTrack) {
-    dep.add(activeEffect);
-    activeEffect.deps.push(dep);
+    dep.add(activeEffect122);
+    activeEffect122.deps.push(dep);
   }
 }
-function trigger(target, key, newValue, oldValue) {
-  const depsMap = targetMap.get(target);
+function trigger2(target, key, newValue, oldValue) {
+  const depsMap = targetMap2.get(target);
   if (!depsMap) {
     return;
   }
   const deps = depsMap.get(key);
-  triggerEffect(deps);
+  triggerEffect2(deps);
 }
-function triggerEffect(deps) {
+function triggerEffect2(deps) {
+  if (!deps) {
+    return;
+  }
   const effects = [...deps];
   effects && effects.forEach((effect2) => {
-    if (effect2 !== activeEffect) {
+    if (effect2 !== activeEffect122) {
       if (effect2.scheduler) {
         effect2.scheduler();
       } else {
@@ -532,11 +968,11 @@ function triggerEffect(deps) {
 }
 
 // packages/reactivity/src/ref.js
-function isRef(value) {
+function isRef2(value) {
   return !!(value && value.__v_isRef);
 }
 function toReactive(value) {
-  return isObject(value) ? reactive(value) : value;
+  return isObject(value) ? reactive2(value) : value;
 }
 var RefImpl = class {
   _value = null;
@@ -549,14 +985,15 @@ var RefImpl = class {
     this._value = toReactive(rawValue);
   }
   get value() {
-    trackEffect(this.dep);
+    console.log("ref");
+    trackEffect2(this.dep);
     return this._value;
   }
   set value(newVal) {
     if (newVal !== this.rawValue) {
       this.rawValue = newVal;
       this._value = toReactive(newVal);
-      triggerEffect(this.dep);
+      triggerEffect2(this.dep);
     }
   }
 };
@@ -568,14 +1005,15 @@ var ObjectRefImpl = class {
   __v_isRef = true;
   // 表示后续我们可以增加拆包的逻辑
   constructor(object, key) {
-    this.object = object;
-    this.key = key;
+    this._object = object;
+    this._key = key;
   }
   get value() {
-    return this.object[this.key];
+    console.log(this._object, this._key, 51, activeEffect122, 51, "----------------");
+    return this._object[this._key];
   }
   set value(newVal) {
-    this.object[this.key] = newVal;
+    this._object[this._key] = newVal;
   }
 };
 function toRef(object, key) {
@@ -588,15 +1026,24 @@ function toRefs(object) {
   }
   return ret;
 }
-function proxyRefs(object) {
+function proxyRefs2(object) {
   return new Proxy(object, {
     get(target, key, receiver) {
+      debugger;
+      console.log(activeEffect122, 76, key);
+      console.log(target, key, 79);
       const v = Reflect.get(target, key, receiver);
-      return isRef(v) ? v.value : v;
+      const v1 = target[key];
+      if (isRef2(v)) {
+        console.log(activeEffect122, 89, key);
+        return v.value;
+      } else {
+        return v;
+      }
     },
     set(target, key, newVal, receiver) {
       const oldVal = Reflect.get(target, key, receiver);
-      if (isRef(oldVal)) {
+      if (isRef2(oldVal)) {
         oldVal.value = newVal;
         return true;
       } else {
@@ -607,47 +1054,50 @@ function proxyRefs(object) {
 }
 
 // packages/reactivity/src/handler.js
-var mutableHandlers = {
+var mutableHandlers2 = {
   // 这里面的receiver就是proxy
   get(target, key, receiver) {
+    console.log(activeEffect122, 15, key);
     if (key === "__v_isReactive") {
       return true;
     }
-    if (isRef(target[key])) {
+    if (isRef2(target[key])) {
       return target[key].value;
     }
     if (isObject(target[key])) {
-      return reactive(target[key]);
+      return reactive2(target[key]);
     }
     const res = Reflect.get(target, key, receiver);
-    track(target, key);
+    console.log(activeEffect122, target, key);
+    track2(target, key);
     return res;
   },
   set(target, key, newValue, receiver) {
     const oldValue = Reflect.get(target, key, receiver);
     const r = Reflect.set(target, key, newValue, receiver);
     if (oldValue !== newValue) {
-      trigger(target, key, newValue, oldValue);
+      trigger2(target, key, newValue, oldValue);
     }
     return r;
   }
 };
 
 // packages/reactivity/src/reactive.js
-var reactiveMap = /* @__PURE__ */ new WeakMap();
-function reactive(value) {
+var reactiveMap2 = /* @__PURE__ */ new WeakMap();
+function reactive2(value) {
   if (!isObject(value)) {
     return value;
   }
-  let existingProxy = reactiveMap.get(value);
+  let existingProxy = reactiveMap2.get(value);
   if (existingProxy) {
     return existingProxy;
   }
   if (value["__v_isReactive"]) {
     return value;
   }
-  const proxy = new Proxy(value, mutableHandlers);
-  reactiveMap.set(value, proxy);
+  console.log(activeEffect122, 288888);
+  const proxy = new Proxy(value, mutableHandlers2);
+  reactiveMap2.set(value, proxy);
   return proxy;
 }
 function isReactive(value) {
@@ -692,7 +1142,7 @@ function dowatch(source, cb, options) {
       effect2.run();
     }
   };
-  const effect2 = new ReactiveEffect(getter, job, "watch");
+  const effect2 = new ReactiveEffect2(getter, job, "watch");
   oldVal = effect2.run();
 }
 function watch(source, cb, options) {
@@ -710,15 +1160,15 @@ var ComputedRefImpl = class {
   dep = /* @__PURE__ */ new Set();
   constructor(getter, setter) {
     this.setter = setter;
-    this.effect = new ReactiveEffect(getter, () => {
+    this.effect = new ReactiveEffect2(getter, () => {
       if (!this._dirty) {
         this._dirty = true;
-        triggerEffect(this.dep);
+        triggerEffect2(this.dep);
       }
     }, "computed");
   }
   get value() {
-    trackEffect(this.dep);
+    trackEffect2(this.dep);
     if (this._dirty) {
       this._dirty = false;
       this._value = this.effect.run();
@@ -780,8 +1230,10 @@ function render(vnode, container) {
   return renderer.render(vnode, container);
 }
 export {
-  ReactiveEffect,
-  activeEffect,
+  Fragment,
+  ReactiveEffect2 as ReactiveEffect,
+  Text,
+  activeEffect122 as activeEffect12,
   computed,
   createRenderer2 as createRenderer,
   createVNode,
@@ -789,20 +1241,20 @@ export {
   effect,
   h,
   isReactive,
-  isRef,
+  isRef2 as isRef,
   isSameVnode,
   isVNode,
-  proxyRefs,
-  reactive,
+  proxyRefs2 as proxyRefs,
+  reactive2 as reactive,
   ref,
   render,
   toReactive,
   toRef,
   toRefs,
-  track,
-  trackEffect,
-  trigger,
-  triggerEffect,
+  track2 as track,
+  trackEffect2 as trackEffect,
+  trigger2 as trigger,
+  triggerEffect2 as triggerEffect,
   watch,
   watchEffect
 };

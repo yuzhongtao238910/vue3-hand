@@ -2,7 +2,11 @@
 // runtime-core之中的createRenderer是不基于平台的
 import { getSeq } from "./seq.js"
 import { ShapeFlags } from "../../shared/src/shapeFlag.js"
-import {isSameVnode} from "./createVNode.js";
+import {isSameVnode, Text, Fragment } from "./createVNode.js";
+import { reactive, ReactiveEffect, activeEffect12 } from "../../reactivity/dist/reactivity.js"
+import { queueJob } from "./scheduler.js"
+import { createComponentInstance, setupComponent } from "./component.js"
+
 export function createRenderer(renderOptions) {
     const {
         createElement: hostCreateElement,
@@ -33,10 +37,13 @@ export function createRenderer(renderOptions) {
     const unmount = (vnode) => {
         // 因为卸载的话，有很多种形式，元素的卸载，组件的卸载等等
         // vnode.el
-        const { shapeFlag } = vnode
-        if (shapeFlag & ShapeFlags.ELEMNT) {
-            hostRemove(vnode.el) // 对于元素来说，直接删除dom就可以啊
+        const { shapeFlag, type, children } = vnode
+        if (type === Fragment) {
+            return unmountChildren(children)
         }
+        // if (shapeFlag & ShapeFlags.ELEMNT) {
+            hostRemove(vnode.el) // 对于元素来说，直接删除dom就可以啊
+        // }
 
     }
     const mountElement = (vnode, container, anchor) => {
@@ -181,7 +188,7 @@ export function createRenderer(renderOptions) {
                 i++
             }
         }
-        console.log(i, e1, e2)
+        // console.log(i, e1, e2)
         // 以上的情况 就是一些头尾的特殊操作 但是不适用于其他的情况
         // a b 【c d e q 】 f g
         // a b 【d c e h 】f g
@@ -372,20 +379,218 @@ export function createRenderer(renderOptions) {
     }
     const processElement = (n1, n2, container, anchor) => {
         if (n1 == null) {
-            console.log("走了一次初次渲染的逻辑")
+            // console.log("走了一次初次渲染的逻辑")
             // 说明就是初次渲染
             mountElement(n2, container, anchor)
         } else {
             // debugger
             // 元素更新了，这里面走更新的逻辑
-            console.log("走更新的逻辑")
-            console.log(n1, n2)
+            // console.log("走更新的逻辑")
+            // console.log(n1, n2)
             // 元素更新了，属性变化了 更新属性
             patchElement(n1, n2)
         }
     }
 
+    const processText = (n1, n2, el) => {
+        if (n1 === null) {
+            console.log("初始化的text", 390)
+            // 初始化的情况
+            // 这里不使用innerHTML
+            hostInsert((n2.el = hostCreateText(n2.children)), el)
+        } else {
+            let el = (n2.el = n1.el) // 复用文本元素
+            if (n1.children === n2.children) {
+                return
+            }
+            hostSetText(el, n2.children)
+        }
+    }
+
+    function updateProps(instance, nextProps) {
+        let prevProps = instance.props
+
+        // 更新的时候 应该考虑一下attrs和props，重新整理一下
+        for (let key in nextProps) {
+            prevProps[key] = nextProps[key]
+        }
+
+        for (let key in prevProps) {
+            if (!(key in nextProps)) {
+                delete prevProps[key]
+            }
+        }
+
+
+    }
+
+    function updatePreRender(instance, next) {
+        // 在渲染之前记得要更新变化的属性
+        instance.next = null // 用完就销毁
+        instance.vnode = next // 更新虚拟节点
+        updateProps(instance, next.props)
+    }
+
+    const setupRendererEffect = (instance, el, anchor) => {
+        // console.log(instance, 413)
+        const componentUpdateFn = () => {
+            debugger
+            console.log(activeEffect12, 437)
+            // console.log("update-238910")
+            // 组件要渲染的 虚拟节点 是 render函数返回的结果
+            // 组件有自己的虚拟节点，返回的虚拟节点 subTree
+            // debugger
+
+            // 除了组件的state，其实还有props
+            // const subTree = render.call(instance.proxy, instance.proxy) // this这里先暂且将proxy设置为状态
+            // console.log(subTree, 416)
+            // debugger
+            if (!instance.isMounted) {
+                // debugger
+                console.log(instance.proxy, 448)
+                const subTree = instance.render.call(instance.proxy, instance.proxy)
+                // console.log(subTree)
+                patch(null, subTree, el, anchor)
+                instance.subTree = subTree // 记录第一次的subTree
+                instance.isMounted = true
+            } else {
+                // console.log("状态变化了，走更新")
+                const prevSubTree = instance.subTree
+                // 这里在下次渲染前面，更新属性后再次渲染，获取最新的虚拟dom
+                // n2.props 来更新instance的 props
+                const next = instance.next
+                if (next) {
+                    // 说明属性有更新
+                    updatePreRender(instance, next) // 因为更新前面会清理依赖，所以这里更改属性不会触发渲染
+                }
+
+                // de
+                // 这里调用render的时候会重新进行依赖收集
+                const nextSubTree = instance.render.call(instance.proxy, instance.proxy)
+                // console.log(prevSubTree, nextSubTree, 433)
+                instance.subTree = nextSubTree // 记录第一次的subTree
+                patch(prevSubTree, nextSubTree, el, anchor)
+            }
+            // 当调用render 方法的时候 会触发响应式的数据访问，进行effect的收集
+            // 所以数据变化后，会重新触发effect的执行
+        }
+        // 每一个组件都是一个effect
+        // 组件自身的状态发生变化了走这里
+        const effect = new ReactiveEffect(componentUpdateFn, () => {
+            // 这里我们可以延迟调用 componentUpdateFn
+            // 更新的批处理 + 去重
+
+            debugger
+
+
+            queueJob(instance.update)
+
+
+        }) // 对应的effect方法
+        const update = instance.update = effect.run.bind(effect)
+        update()
+    }
+
+
+
+    const mountComponent = (n2, el, anchor) => {
+
+        // 1)创建组件的实例
+
+        const instance = createComponentInstance(n2)
+        // 2）启动组件，给组件的实例赋值
+        setupComponent(instance)
+
+
+        // 3) 组件的渲染流程
+
+        setupRendererEffect(instance, el, anchor)
+
+
+
+
+
+        // console.log(instance.attrs, instance.props.a)
+
+
+
+    }
+    function hasChanged(oldProps = {}, newProps = {}) {
+        // 判断两个对象是否有变化？
+        // 直接看数量，数量有变化，肯定变化了，就不用遍历了
+        let oldKeys = Object.keys(oldProps)
+        let newKeys = Object.keys(newProps)
+        if (oldKeys.length !== newKeys) {
+            return true
+        }
+
+        for (let i = 0; i < newKeys.length; i++) {
+            const key = newKeys[i]
+            if (newProps[key] !== oldProps[key]) {
+                return false
+            }
+        }
+        return false
+    }
+    function shouldComponentUpdate(n1, n2) {
+        const oldProps = n1.props
+        const newProps = n2.props
+
+        if (oldProps == newProps) {
+            return false
+        }
+        return hasChanged(oldProps, newProps)
+    }
+    const updateComponent = (n1, n2, el, anchor) => {
+        // 这里我们属性发生了变化，会执行到这里
+        // 或者是插槽更新了，也会执行到这里
+
+        const instance = n2.component = n1.component
+        // 内部props是响应式的，所以更新props就可以自动的更新视图，vue2就是这样操作，但是这样不好
+        // instance.props.message = n2.props.message
+        // debugger
+
+        // 这里我们可以比较属性，如果属性发生变化了，我们调用instance.update来处理更新逻辑
+        // 统一更新的入口
+        // const oldProps = n1.props
+        // const newProps = n2.props
+        // updateProps(oldProps, newProps)
+
+        // 保存新的属性
+
+
+        if (shouldComponentUpdate(n1, n2)) {
+            // debugger
+            instance.next = n2 // 暂存新的虚拟节点
+            instance.update()
+        }
+
+    }
+
+
+    const processComponent = (n1, n2, el, anchor) => {
+        // debugger
+        if (n1 == null) {
+            mountComponent(n2, el, anchor)
+        } else {
+            // h(xx, {xx: 1})
+            // h(xx, {xx: 2})
+            // 组件的属性变化了，或者插槽变化了，走这里
+            updateComponent(n1, n2, el, anchor) // 组件的属性变化了
+        }
+        // COMPONENT: (1 << 2) | (1 << 1)  包含普通状态组件和函数式组件
+    }
+    const processFragment = (n1, n2, el) => {
+        if (n1 == null) {
+            mountChildren(n2.children, el)
+        } else {
+            patchKeyChildren(n1.children, n2.children, el)
+        }
+    }
+
     const patch = (n1, n2, container, anchor = null) => {
+        // debugger
+        // console.log(n1, n2, container, 400)
         // 这里主要是更新和初次渲染
         // 如果是初次渲染的话，n1就是null n2是最新的
         // 如果是更新的话，就是n1 和 n2都是有值的
@@ -398,17 +603,41 @@ export function createRenderer(renderOptions) {
             unmount(n1)
             n1 = null
         }
-        // 元素的处理
-        processElement(n1, n2, container, anchor)
+        const {type, shapeFlag } = n2
+        console.log(type, shapeFlag)
+        switch (type) {
+            case Text:
+                processText(n1, n2, container)
+                break;
+            case Fragment:
+                processFragment(n1, n2, container)
+                break;
+            default:
+                if (shapeFlag & ShapeFlags.ELEMNT) {
+                    // 元素的处理
+                    // 元素的处理
+                    processElement(n1, n2, container, anchor)
+                } else if (shapeFlag & ShapeFlags.COMPONENT) {
+                    // 处理组件
+                    processComponent(n1, n2, container, anchor)
+                }
+
+        }
+
 
     }
     const render = (vnode, container) => {
+        debugger
+        // debugger
+        // debugger
+        // console.log(vnode, container, 533, "-----")
+        // debugger
         // 虚拟节点的创建，最终生成真实的dom
         // console.log(vnode, container)
         // 1) 卸载 render(null, app)
         // 2) 更新 之前渲染过了，现在在渲染，之前渲染过一次，产生了虚拟节点，再次渲染产生了虚拟节点
         // 3) 初次挂载
-
+        // debugger
         if (vnode == null) {
             // console.log("第一次")
             // 如果传递的vnode是null的话，就是卸载的逻辑

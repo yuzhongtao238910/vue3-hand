@@ -2,6 +2,7 @@ import { track, trigger } from "./effect.js"
 import { isObject } from "../../shared/src/index.js";
 import { reactive } from "./reactive.js"
 import { isRef } from "./ref.js"
+import { activeEffect12 } from "./effect.js"
 export const mutableHandlers = {
     // 这里面的receiver就是proxy
     get(target, key, receiver) { // 我们在使用proxy的时候，需要搭配reflect来使用，用来解决this的问题
@@ -11,6 +12,7 @@ export const mutableHandlers = {
         // effect 和 key之间是多对多的关系 ，依赖收集
         // console.log(activeEffect, key)
         // console.log("get", target, key)
+        console.log(activeEffect12, 15, key)
         if (key === "__v_isReactive") {
             // console.log("apple")
             return true
@@ -29,6 +31,7 @@ export const mutableHandlers = {
 
         const res = Reflect.get(target, key, receiver) // 类似于call方法，改变this的指向
         // 做--依赖收集 记录属性和当前的effect的关系
+        console.log(activeEffect12, target, key)
         track(target, key)
         return res
         // return target[key]

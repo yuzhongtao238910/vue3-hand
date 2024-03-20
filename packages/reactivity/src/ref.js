@@ -1,6 +1,6 @@
 import {isObject} from "../../shared/src/index.js";
 import { reactive } from "./reactive.js";
-import {trackEffect, triggerEffect} from "./effect.js";
+import {trackEffect, triggerEffect, activeEffect12} from "./effect.js";
 
 export function isRef(value) {
     return !!(value && value.__v_isRef)
@@ -21,6 +21,7 @@ class RefImpl {
     }
 
     get value() {
+        console.log("ref")
         // 取值的时候 进行依赖收集
         trackEffect(this.dep)
         return this._value
@@ -43,28 +44,32 @@ class ObjectRefImpl {
     // 将某个属性转换为ref
     __v_isRef = true // 表示后续我们可以增加拆包的逻辑
     constructor(object, key) {
-        this.object = object
-        this.key = key
+        this._object = object
+        this._key = key
     }
 
     get value() {
-        return this.object[this.key]
+        console.log(this._object, this._key, 51, activeEffect12, 51, '----------------')
+        return this._object[this._key]
     }
 
     set value(newVal) {
-        this.object[this.key] = newVal
+        this._object[this._key] = newVal
     }
 }
 export function toRef(object, key) {
     return new ObjectRefImpl(object, key)
 }
 export function toRefs(object) {
+    // console.log(activeEffect12, '64444----')
     // object 此时会有两种情况：数组 / 对象
     const ret = Array.isArray(object) ? new Array(pbject.length) : Object.create(null)
 
     for (let key in object) {
         ret[key] = toRef(object, key)
     }
+
+    // console.log(activeEffect12, 'toRefs')
 
     return ret
 }
@@ -73,8 +78,20 @@ export function toRefs(object) {
 export function proxyRefs(object) {
     return new Proxy(object, {
         get(target, key, receiver) {
+            debugger
+            console.log(activeEffect12, 76, key)
+            console.log(target, key, 79)
             const v = Reflect.get(target, key, receiver)
-            return isRef(v) ? v.value : v
+            const v1 = target[key]
+            // console.log(v, v1)
+
+            if (isRef(v)) {
+                console.log(activeEffect12, 89, key)
+                return v.value
+            } else {
+                return v
+            }
+            // return isRef(v) ? v.value : v
         },
         set(target, key, newVal, receiver) {
             const oldVal = Reflect.get(target, key, receiver)

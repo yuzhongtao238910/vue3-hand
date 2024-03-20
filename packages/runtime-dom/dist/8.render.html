@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // vue2之中 的所有的.vue文件的template必须要有一个根节点来包裹内容
+        // vue的核心：响应式原理 依赖收集effect diff算法 组件渲染 模版编译 其他的api的使用
+        // react解决了这个问题，使用了空标签<></>
+
+        // import { Fragment, Text, h, render } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        import {Fragment, h, render, Text} from "./runtime-dom.js";
+
+        render(h('div', {style: {color: 'red'}, key: 1}, [
+            h('li', {key: 'a'}, 'a'),
+            h('li', {key: 'b'}, 'b'),
+            h('li', {key: 'c'}, 'c'),
+            h('li', {key: 'd'}, 'd'),
+            h('li', {key: 'e'}, 'e'),
+            h('li', {key: 'q'}, 'q'),
+            h('li', {key: 'f'}, 'f'),
+            h('li', {key: 'g'}, 'g'),
+
+        ]), app)
+        setTimeout(() => {
+            render(h(Text, 'hello'), app)
+        }, 2000)
+
+        setTimeout(() => {
+            render(h(Text, 'world'), app)
+        }, 4000)
+
+
+        setTimeout(() => {
+            render(h('div', {style: {color: 'red'}, key: 1}, [
+                h('li', {key: 'a'}, 'a'),
+                h('li', {key: 'b'}, 'b')
+            ]), app)
+        }, 5000)
+
+
+        setTimeout(() => {
+            render(h(Fragment, {}, [h(Text, 'hello'), h(Text, 'world')]), app)
+        }, 7000)
+
+        setTimeout(() => {
+            render(h('div', {}, 'yuzhongtao'), app)
+        }, 8000)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+

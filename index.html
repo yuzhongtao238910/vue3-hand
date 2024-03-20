@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <script type="text/javascript">
+        let obj = {
+            a: 1,
+            c: [1, 2, 3]
+        }
+        let f= Object.assign({}, obj)
+
+
+        f.c.push(22)
+        f.c = null
+        console.log(f, obj)
+    </script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { Fragment, Text, h, render } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+        // import { Fragment, Text, h, render } from "../../../../node_modules/vue/dist/vue.runtime.esm-browser.js"
+        import {Fragment, h, render, Text} from "./runtime-dom.js";
+        // 组件有几部分组成 组件的好处优势是什么
+        // webcomponent 兼容性不好 硬伤 就定义了组件的组成 模版 属性attrs 事件 插槽 样式
+        // vue的组件有什么特点？
+        // 组件化：是对ui的封装 自己的状态 别人给的状态
+        // 模块化：是对业务逻辑的封装
+        // vue2之中有data，必须是一个函数，防止data数据被共享，如果是一个对象可能就会涉及到这个对象
+        // 被共享给多个组件来使用
+        const VueComponent = {
+            data() {
+                return {
+                    name: "apple",
+                    age: 0
+                }
+            },
+            // template: '<div>hello</div>',
+            props: {
+                a: Number
+            },
+            render(proxy) { // 允许编写模版的
+                // console.log(proxy, 28)
+                // 这块是为了测试，尽量不要在render之中操作数据，会导致死循环
+                // 同时更新多个状态，会导致页面多次渲染
+                // setTimeout(() => {
+                //     proxy.name += 'str'
+                //     proxy.age++
+                // }, 2000)
+                return h(Fragment, [h(Text, proxy.name)])
+            }
+
+            // 属性分为两种：props attrs
+        }
+        // 组件的类型是一个对象
+        // 元素 和 组件 -》组件渲染的内容 是返回的虚拟节点，可以是组件也可以是元素
+        render(h(VueComponent), app)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

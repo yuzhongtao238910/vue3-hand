@@ -5,7 +5,10 @@
     key
 
  */
-import { isString, ShapeFlags } from "../../shared/src/index.js"
+import {isObject, isString, ShapeFlags} from "../../shared/src/index.js"
+
+export const Text = Symbol()
+export const Fragment = Symbol()
 export function isVNode(value) {
     return value.__v_isVNode // 用来判断是否是虚拟节点
 }
@@ -14,7 +17,9 @@ export function isSameVnode(n1, n2) {
     return n1.type === n2.type && n1.key === n2.key
 }
 export function createVNode(type, props, children = null) {
-    const shapeFlag = isString(type) ? ShapeFlags.ELEMNT : 0
+    // STATEFUL_COMPONENT 带有状态的组件
+    // type是对象说明是一个组件
+    const shapeFlag = isString(type) ? ShapeFlags.ELEMNT : isObject(type) ? ShapeFlags.STATEFUL_COMPONENT : 0
     const vnode = {
         __v_isVNode: true, // 判断对象是不是虚拟节点可以采用这个字段
         type,
