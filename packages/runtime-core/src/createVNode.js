@@ -36,7 +36,10 @@ export function createVNode(type, props, children = null) {
         if (Array.isArray(children)) {
             // 自己是元素 儿子是数组的话
             type |= ShapeFlags.ARRAY_CHILDREN
-        } else {
+        } else if (isObject(children)) {
+            // 如果是对象的话，就会说明这块是插槽 组件的插槽
+            type = ShapeFlags.SLOTS_CHILDREN
+        }else {
             // 这块全部格式化为字符串
             vnode.children = String(children)
             type |= ShapeFlags.TEXT_CHILDREN

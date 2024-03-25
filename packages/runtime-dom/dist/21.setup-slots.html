@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { ref, Fragment, Text, h, render, reactive, toRefs } from "../../../../node_modules/vue/dist/vue.esm-browser.js"
+        // import { } from "../../reactivity/dist/reactivity.js"
+        import { ref, h,render, Fragment, Text,toRefs, reactive  } from "./runtime-dom.js"
+        const VueComponent = {
+
+            // 普通插槽：我们渲染的时候，数据都是来自于父组件的
+            // 使用组件的时候，传递参数，就是做用于插槽,会接受组件之中的数据
+            // 匿名插槽，都放在了default之中
+            // 具名插槽：就是放在了对应的命令之中
+            setup(props, {slots}) {
+                const text = ref('hello')
+                console.log(slots)
+                // debugger
+                // console.log(slots.default(text.value))
+                // return () => {
+                //     return h(Fragment, [
+                //         slots.header(),
+                //         slots.default(),
+                //         slots.footer()
+                //     ])
+                // }
+                // 由于后面的component.js 加了proxy，因此这块也可以使用proxy来访问
+
+                // proxy 就是为了对vue2作兼容，因为vue2里面可以单独写到options里面，而不是setup的返回值
+                return (proxy) => {
+                    console.log(proxy, 33)
+                    return h(Fragment, [
+                        proxy.$slots.header(),
+                        proxy.$slots.default(),
+                        proxy.$slots.footer()
+                    ])
+                }
+            }
+        }
+
+
+        const ChildComponent = {
+            setup(props, {slots}) {
+                return () => {
+                    return h('div', 'yuzhongtao')
+                }
+            }
+        }
+
+        // vue3为了方便区分是插槽还是基本的虚拟节点，作区分，就将这块直接写成了对象
+        render(h(VueComponent, {}, {
+            // 组件的儿子就是插槽，而且插槽一定是一个对象
+            // default 就是匿名插槽
+            default: () => h(ChildComponent),
+            header: () => h(Text, 'header'),
+            footer: () => h(Text, 'footer')
+        }), app)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

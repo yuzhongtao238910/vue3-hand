@@ -68,7 +68,7 @@ export function getSeq(arr) {
             result[start] = i // 直接使用当前的索引换掉
         }
     }
-    console.log(result, p)
+    // console.log(result, p)
     // 实现倒序追踪
     let i = result.length // 总长度
     let last = result[i - 1] // 获取最后一项

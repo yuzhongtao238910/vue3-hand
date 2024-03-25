@@ -3,7 +3,7 @@
 import { getSeq } from "./seq.js"
 import { ShapeFlags } from "../../shared/src/shapeFlag.js"
 import {isSameVnode, Text, Fragment } from "./createVNode.js";
-import { reactive, ReactiveEffect, activeEffect12 } from "../../reactivity/dist/reactivity.js"
+import { reactive, ReactiveEffect } from "../../reactivity/dist/reactivity.js"
 import { queueJob } from "./scheduler.js"
 import { createComponentInstance, setupComponent } from "./component.js"
 
@@ -167,9 +167,9 @@ export function createRenderer(renderOptions) {
             // 插入 i 到 e2之间的
             while (i <= e2) {
                 const nextPos = e2 + 1
-                console.log(nextPos, 163)
+                // console.log(nextPos, 163)
                 const anchor = c2[nextPos]?.el // 获取下一个元素的el
-                console.log(anchor, 165)
+                // console.log(anchor, 165)
                 patch(null, c2[i], el, anchor)
                 i++
             }
@@ -394,7 +394,7 @@ export function createRenderer(renderOptions) {
 
     const processText = (n1, n2, el) => {
         if (n1 === null) {
-            console.log("初始化的text", 390)
+            // console.log("初始化的text", 390)
             // 初始化的情况
             // 这里不使用innerHTML
             hostInsert((n2.el = hostCreateText(n2.children)), el)
@@ -409,19 +409,15 @@ export function createRenderer(renderOptions) {
 
     function updateProps(instance, nextProps) {
         let prevProps = instance.props
-
         // 更新的时候 应该考虑一下attrs和props，重新整理一下
         for (let key in nextProps) {
             prevProps[key] = nextProps[key]
         }
-
         for (let key in prevProps) {
             if (!(key in nextProps)) {
                 delete prevProps[key]
             }
         }
-
-
     }
 
     function updatePreRender(instance, next) {
@@ -429,13 +425,17 @@ export function createRenderer(renderOptions) {
         instance.next = null // 用完就销毁
         instance.vnode = next // 更新虚拟节点
         updateProps(instance, next.props)
+
+        // 更新插槽
+        // 如果是对象的话
+        instance.slots = next.children // 新的儿子
     }
 
     const setupRendererEffect = (instance, el, anchor) => {
         // console.log(instance, 413)
         const componentUpdateFn = () => {
-            debugger
-            console.log(activeEffect12, 437)
+            // debugger
+            // console.log(activeEffect12, 437)
             // console.log("update-238910")
             // 组件要渲染的 虚拟节点 是 render函数返回的结果
             // 组件有自己的虚拟节点，返回的虚拟节点 subTree
@@ -447,7 +447,8 @@ export function createRenderer(renderOptions) {
             // debugger
             if (!instance.isMounted) {
                 // debugger
-                console.log(instance.proxy, 448)
+                // console.log(instance.proxy, 448)
+                // debugger
                 const subTree = instance.render.call(instance.proxy, instance.proxy)
                 // console.log(subTree)
                 patch(null, subTree, el, anchor)
@@ -480,7 +481,7 @@ export function createRenderer(renderOptions) {
             // 这里我们可以延迟调用 componentUpdateFn
             // 更新的批处理 + 去重
 
-            debugger
+            // debugger
 
 
             queueJob(instance.update)
@@ -520,7 +521,9 @@ export function createRenderer(renderOptions) {
         // 直接看数量，数量有变化，肯定变化了，就不用遍历了
         let oldKeys = Object.keys(oldProps)
         let newKeys = Object.keys(newProps)
-        if (oldKeys.length !== newKeys) {
+
+
+        if (oldKeys.length !== newKeys.length) {
             return true
         }
 
@@ -535,10 +538,16 @@ export function createRenderer(renderOptions) {
     function shouldComponentUpdate(n1, n2) {
         const oldProps = n1.props
         const newProps = n2.props
-
+        // debugger
         if (oldProps == newProps) {
             return false
         }
+
+        // 如果组件有插槽，也需要进行更新
+        if (n1.children !== n2.children) {
+            return true // 遇到插槽前后不一致就需要重新渲染
+        }
+
         return hasChanged(oldProps, newProps)
     }
     const updateComponent = (n1, n2, el, anchor) => {
@@ -558,7 +567,8 @@ export function createRenderer(renderOptions) {
 
         // 保存新的属性
 
-
+        // console.log(shouldComponentUpdate(n1, n2))
+        // debugger
         if (shouldComponentUpdate(n1, n2)) {
             // debugger
             instance.next = n2 // 暂存新的虚拟节点
@@ -604,7 +614,7 @@ export function createRenderer(renderOptions) {
             n1 = null
         }
         const {type, shapeFlag } = n2
-        console.log(type, shapeFlag)
+        // console.log(type, shapeFlag)
         switch (type) {
             case Text:
                 processText(n1, n2, container)
@@ -627,7 +637,7 @@ export function createRenderer(renderOptions) {
 
     }
     const render = (vnode, container) => {
-        debugger
+        // debugger
         // debugger
         // debugger
         // console.log(vnode, container, 533, "-----")
@@ -648,6 +658,7 @@ export function createRenderer(renderOptions) {
         } else {
             // 否则 这个里面就是初次渲染和更新的逻辑
             // 在源码之中挂载和更新都写入了一个方法之中就是patch
+            // debugger
             patch(container._vnode || null, vnode, container)
         }
 

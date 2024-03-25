@@ -1,4 +1,4 @@
-export let activeEffect12 = undefined
+window.activeEffect12 = undefined
 // import { activeEffect12 } from "./reactive.js"
 let id= 0
 function cleanupEffect(effect) { // 在收集的列表之中将自己移除掉
@@ -11,7 +11,7 @@ function cleanupEffect(effect) { // 在收集的列表之中将自己移除掉
 }
 export class ReactiveEffect {
     constructor(fn, scheduler, flag) {
-        console.log("--------------")
+        // console.log("--------------")
         // 默认会将fn挂载到类的实例上面
         this.fn = fn
         this.id = id++
@@ -29,13 +29,11 @@ export class ReactiveEffect {
         }
         try {
             // 用于effect嵌套时候产生的父子关系，这样就不再需要创建一个栈了
-            this.parent = activeEffect12
+            this.parent = window.activeEffect12
             // 让属性和effect进行关联操作
 
-            activeEffect12 = this
-            console.log(activeEffect12)
+            window.activeEffect12 = this
             cleanupEffect(this)
-            console.log(activeEffect12)
             // return 就是为了实现计算属性来的
             return this.fn() // fn 执行会触发依赖收集
             /*
@@ -51,9 +49,8 @@ export class ReactiveEffect {
             e1 end -> activeEffect = null this.parent = null
              */
         } finally {
-            console.log("finally",activeEffect12)
             // 每run一次都需要进行清空
-            activeEffect12 = this.parent
+            window.activeEffect12 = this.parent
             this.parent = null
         }
     }
@@ -84,7 +81,7 @@ export function track(target, key) {
     // { name: "jw"} "name" -> [effect, effect]
     // 需要进行去重复，weakmap map set
     // 1- 用户只在effect之中的才会进行触发
-    if (activeEffect12) { // 说明用户是在effect之中使用的数据，在effect之中使用的数据才会进行依赖收集
+    if (window.activeEffect12) { // 说明用户是在effect之中使用的数据，在effect之中使用的数据才会进行依赖收集
         let depsMap = targetMap.get(target)
         // 如果没有 创建一个映射表
         if (!depsMap) {
@@ -111,16 +108,16 @@ export function track(target, key) {
 }
 export function trackEffect(dep) {
     // 如果有则看一下set之中有没有这个effect
-    let shouldTrack = !dep.has(activeEffect12)
+    let shouldTrack = !dep.has(window.activeEffect12)
     // 没有再去加
     if (shouldTrack) {
         // name = new Set(effect1, effect2) -> dep
         // age = new Set(effect1, effect2) -> dep
-        dep.add(activeEffect12)
+        dep.add(window.activeEffect12)
         // name: new Set(effect1, effect2)
         // age: new Set(effect1, effect2)
         // 可以通过当前的effect找到这两个集合之中的自己，将它移除
-        activeEffect12.deps.push(dep)
+        window.activeEffect12.deps.push(dep)
     }
 }
 

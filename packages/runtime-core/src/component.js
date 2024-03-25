@@ -1,5 +1,5 @@
-import {reactive, proxyRefs, activeEffect12} from "../../reactivity/dist/reactivity.js";
-import { isFunction } from "../../shared/src/index.js"
+import {reactive, proxyRefs} from "../../reactivity/dist/reactivity.js";
+import {isFunction, ShapeFlags} from "../../shared/src/index.js"
 
 export function createComponentInstance(n2) {
 
@@ -16,7 +16,9 @@ export function createComponentInstance(n2) {
         propsOptions: n2.type.props || {}, // 组件之中接收的属性
         proxy: null,
         render: null,
-        setupState: {}
+        setupState: {},
+        exposed: {},
+        slots: {} // 存储当前组件提供的插槽
     } // 此实例就是用来记录组件的相关信息的
     return instance
 }
@@ -40,21 +42,34 @@ const initProps = (instance, userProps) => {
     instance.props = reactive(props) // 这块应该是shallowReactive的，但是我们没有写这个方法，因此就使用reactive代替
 }
 const publicProperties = {
-    $attrs: i => i.attrs // proxy.$attrs
+    $attrs: i => i.attrs, // proxy.$attrs
+    $slots: i => i.slots // proxy.$slots
+}
+
+
+function initSlots(instance, children) {
+    if (instance.vnode.shapeFlag & ShapeFlags.SLOTS_CHILDREN) {
+        instance.slots = children
+    }
 }
 export function setupComponent(instance) {
 
-    const { props, type } = instance.vnode
+    const { props, type, children } = instance.vnode
 
     // 对于组件来说，组件保存的不是el，而是组件的实例 // 这块是复用组件的实例
     instance.vnode.component = instance
 
 // 实例上的props和attrs n2.props是组件的虚拟节点的props
     initProps(instance, props) // 使用用户传递给虚拟节点的props
+
+    // 初始化插槽
+    initSlots(instance, children)
+
+
     instance.proxy = new Proxy(instance, {
         get(target, key, receiver) {
             const  { state, props, setupState } = target
-            console.log(activeEffect12, 57, key)
+            // console.log(activeEffect12, 57, key)
             if (key in setupState) {
                 return setupState[key]
             }
@@ -91,7 +106,41 @@ export function setupComponent(instance) {
 
     // 这里多了setup的逻辑
     if (setup) {
-        const setupResult = setup()
+        const context = {
+            attrs: instance.attrs,
+            emit(eventName, ...args) {
+
+                // 父组件传递的时候事件名字： onClickDemo
+                // 子组件使用的时候是：clickDemo
+                const bindName = `on${eventName[0].toUpperCase()}${eventName.slice(1)}`
+                // console.log(instance.attrs)
+                const handler = instance.attrs[bindName]
+
+                // 这块的handler是可以有数组的形式的
+                // 例如 <App @click="demo1" @click="demo2"></App>
+                if (handler) {
+                    let handlers = Array.isArray(handler) ? handler : [handler]
+                    handlers.forEach(handler => handler(...args))
+                }
+
+                // handler && handler(...args)
+            },
+            expose(exposed) { // 主要用于ref，通过ref获取组件的时候，。在vue里面只能是获取到组件的实例
+                // 但是在vue3之中如果提供了expose则通过ref、获取组件的就是expose属性
+                instance.exposed = exposed
+            },
+            slots: instance.slots
+                // 插槽的更新，是
+                // 组件的生命周期
+                // vue3之中的靶向更新，ast语法树，组件的编译优化 代码转化 代码生成
+                // 组件的实现
+                // pinia
+                // vue-router 的 原理
+                // provide inject
+            //     return
+            // }
+        }
+        const setupResult = setup(instance.props, context) // setup 只会在组件的初始化的时候走一次，顶替了vue2之中的created beforeCreate
         if (isFunction(setupResult)) {
             // 如果setup的返回值是一个函数的话，说明是返回的是render函数
             // 否则就是正常的返回变量和方法
@@ -108,13 +157,9 @@ export function setupComponent(instance) {
         // vue3逻辑处理完毕才处理vue2的老的写法
         instance.state = reactive(data.call(instance.proxy)) // 获取的数据 然后还需要变成响应式的
     }
-
     if (!instance.render) {
         instance.render = render
     }
-
-
-
 }
 
 

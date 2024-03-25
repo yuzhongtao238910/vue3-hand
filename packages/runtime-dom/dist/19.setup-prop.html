@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="app"></div>
+    <script type="module">
+        // import { Fragment, Text, h, render, reactive, toRefs } from "../../../../node_modules/vue/dist/vue.esm-browser.js"
+        // import { } from "../../reactivity/dist/reactivity.js"
+        import { h,render, Fragment, Text,toRefs, reactive  } from "./runtime-dom.js"
+        const VueComponent = {
+            // props: {
+            //     a: Number,
+            //     b: Number
+            // },
+            setup(props, { emit }) {
+                const state = reactive({
+                    name: 'jw',
+                    age: 30
+                })
+                const setAge = () => {
+                    // debugger
+                    // state.age++
+
+                }
+                // console.log(context, 27)
+                return (props) => { // proxy.name.value  会自动拆包的逻辑 proxyRefs
+                    return h(Fragment, [h(Text, state.name), h(Text, state.age), h('button', {onClick: () => {
+                            emit('myEvent', '238910')
+                        }},  '123')])
+                }
+            },
+        }
+
+        // onMyEvent 在子组件里面使用的时候，可以不带上on，然后可以首字母小写
+        render(h(VueComponent, {onMyEvent: (val) => {
+                console.log("3777")
+                window.alert(val)
+                // emit('myEvent', '238910')
+            }}), app)
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

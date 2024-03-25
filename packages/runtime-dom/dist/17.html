@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <script type="text/javascript">
+        /*
+        观察者模式：
+            观察目标
+            观察者
+            一旦观察目标的状态发生了变化，所有的观察者都会将得到通知
+        当一个对象的状态发生变化的时候，所以依赖于他的对象都会得到通知并且被自动的更新，解决了主体对象与观察者之间的功能的耦合
+        就是一个对象的状态改变给其他的对象通知的问题
+         */
+        class Subject {
+            constructor() {
+                this.observer = []
+            }
+
+            add(observer) {
+                this.observer.push(observer)
+            }
+
+            remove(observer) {
+                // splice
+                // filter
+                this.observer = this.observer.filter(item => item !== observer)
+            }
+
+            notify() {
+                this.observer.forEach(item => {
+                    console.log(item)
+                    item.update()
+                })
+            }
+        }
+        class Observer {
+            constructor(name) {
+                this.name = name
+            }
+            update() {
+                console.log("item", this.name)
+            }
+        }
+        const subject = new Subject()
+        const observer1 = new Observer('11')
+        const observer2 = new Observer('22')
+
+        subject.add(observer1)
+        subject.add(observer2)
+
+        console.log(subject)
+
+        subject.remove(observer1)
+        console.log(subject)
+
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

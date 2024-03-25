@@ -1,6 +1,6 @@
 import {isObject} from "../../shared/src/index.js";
 import { reactive } from "./reactive.js";
-import {trackEffect, triggerEffect, activeEffect12} from "./effect.js";
+import {trackEffect, triggerEffect} from "./effect.js";
 
 export function isRef(value) {
     return !!(value && value.__v_isRef)
@@ -78,15 +78,15 @@ export function toRefs(object) {
 export function proxyRefs(object) {
     return new Proxy(object, {
         get(target, key, receiver) {
-            debugger
-            console.log(activeEffect12, 76, key)
+            // debugger
+            // console.log(activeEffect12, 76, key)
             console.log(target, key, 79)
             const v = Reflect.get(target, key, receiver)
-            const v1 = target[key]
+            // const v1 = target[key]
             // console.log(v, v1)
 
             if (isRef(v)) {
-                console.log(activeEffect12, 89, key)
+                // console.log(activeEffect12, 89, key)
                 return v.value
             } else {
                 return v

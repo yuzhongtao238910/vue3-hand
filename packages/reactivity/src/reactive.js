@@ -1,6 +1,6 @@
 import { mutableHandlers } from "./handler.js"
 import { isObject } from "../../shared/src/index.js";
-import { activeEffect12 } from "./effect.js"
+// import { activeEffect12 } from "./effect.js"
 
 
 // export let activeEffect12 = null
@@ -20,7 +20,7 @@ export function reactive(value) {
         return value
     }
     // proxy 必须是一个对象
-    console.log(activeEffect12, 288888)
+    // console.log(activeEffect12, 288888)
     const proxy = new Proxy(value, mutableHandlers) // 没有代理过的话会创建代理
     reactiveMap.set(value, proxy) // 缓存代理结果
 
