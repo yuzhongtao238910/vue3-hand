@@ -15,7 +15,7 @@
             // 生命周期：用户注册的一些钩子方法，当组件在创建销毁更新的时候会调用这些方法
             // onMounted
             //
-            setup(props) {
+            setup(props, context) {
                 const text = ref('hello')
                 // const instance = getCurrentInstance()
                 // onBeforeMount(() => {
@@ -42,23 +42,28 @@
                 // })
 
 
-                return {
-                    text
+                return () => {
+                    return h(Fragment, [
+                        context.slots.header(),
+                        context.slots.default(text.value),
+                        context.slots.footer()
+                    ])
                 }
             },
-            render (proxy) {
+            /*render (proxy) {
                 console.log("render")
                 return h(Fragment, [
                     proxy.$slots.header(),
                     proxy.$slots.default(proxy.text),
                     proxy.$slots.footer()
                 ])
-            }
+            }*/
         }
 
 
         setTimeout(() => {
             // 挂载
+            console.log("mounted")
             render(h(VueComponent, {}, {
                 default: (text) => h(Text, 'default' + text),
                 header: () => h(Text, 'header1'),
@@ -68,18 +73,19 @@
 
         setTimeout(() => {
             // 更新
+            console.log("updated")
             render(h(VueComponent, {}, {
                 default: (text) => h(Text, 'default' + text),
                 header: () => h(Text, 'header2'),
                 footer: () => h(Text, 'footer2')
             }), app)
         }, 2000)
-
-
-        setTimeout(() => {
-            // 卸载
-            render(null, app)
-        }, 3000)
+        //
+        //
+        // setTimeout(() => {
+        //     // 卸载
+        //     render(null, app)
+        // }, 3000)
 
     </script>
 </body>

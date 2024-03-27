@@ -427,8 +427,10 @@ export function createRenderer(renderOptions) {
         updateProps(instance, next.props)
 
         // 更新插槽
-        // 如果是对象的话
+        // 如果是对象的话,不能采用替换的方式，如果用户使用可能解构出来使用，导致更新了插槽但是用户使用的还是老的slots
         instance.slots = next.children // 新的儿子
+        console.log(next.children)
+        debugger
     }
 
     const setupRendererEffect = (instance, el, anchor) => {
