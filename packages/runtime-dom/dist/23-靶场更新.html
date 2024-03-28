@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title></title>
+</head>
+<body>
+	<div id="app"></div>
+	<script type="module">
+		import { ref, Fragment, Text, h, 
+			openBlock as _openBlock,
+			createElementBlock as _createElementBlock,
+			createCommentVNode as _createCommentVNode,
+			toDisplayString as _toDisplayString,
+		render, reactive, toRefs } from "../../../../node_modules/@vue/runtime-dom/dist/runtime-dom.esm-browser.js"
+		const VueComponent = {
+			setup() {
+				const state = reactive({
+					name: 'apple',
+					age: 333
+				})
+
+				return {
+					...toRefs(state)
+				}
+			},
+			render(_ctx, _cache, $props, $setup, $data, $options) {
+				return (_openBlock(), _createElementBlock("div", null, [
+					_createCommentVNode(" h1就是一个死标签，根本都不会变化 "),
+					_createElementVNode("h1", null, "hello"),
+					_createElementVNode("span", null, _toDisplayString(_ctx.name), 1 /* TEXT */),
+					_createElementVNode("p", null, [
+					  _createElementVNode("span", null, _toDisplayString(_ctx.age), 1 /* TEXT */)
+					])
+				]))
+			}
+		}
+
+
+		render(h(VueComponent), app)
+		
+	</script>
+</body>
+</html>
